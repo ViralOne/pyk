@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <style>
+      table {
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid black;
+        padding: 8px;
+      }
+      tr:nth-child(even) {
+        background-color: #dddddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Docker Images in "{{ namespace }}" namespace</h1>
+    <table>
+      <tr>
+        <th>Pod Name</th>
+        <th>Image</th>
+      </tr>
+      {% for image in images %}
+      <tr>
+        <td>{{ image.pod_name }}</td>
+        <td>{{ image.image }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>

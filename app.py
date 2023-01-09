@@ -31,13 +31,13 @@ def list_images():
   return render_template('images.html', images=images)
 
 @app.route("/health/<namespace>")
-def pods(namespace):
+def health(namespace):
     # List all pods in the specified namespace
-    pods = v1.list_namespaced_pod(namespace).items
+    health = v1.list_namespaced_pod(namespace).items
 
     # For each pod, check its status and determine whether it is healthy or unhealthy
-    pod_info = []
-    for pod in pods:
+    health_info = []
+    for pod in health:
         if pod.status.container_statuses:
             health = "healthy"
             for container_status in pod.status.container_statuses:
@@ -46,11 +46,29 @@ def pods(namespace):
                     break
         else:
             health = "unknown"
-        pod_info.append({
+        health_info.append({
             "name": pod.metadata.name,
             "health": health
         })
-    return render_template("health.html", namespace=namespace, pod_info=pod_info)
+    return render_template("health.html", namespace=namespace, pod_info=health_info)
+
+@app.route('/images/<namespace>')
+def get_image(namespace):
+  # List all pods in the specified namespace
+  pod_image = v1.list_namespaced_pod(namespace=namespace)
+
+  # Extract the pod name and Docker image for each pod
+  images = []
+  for pod_image in pod_image.items:
+    container = pod_image.spec.containers[0]
+    images.append({
+      'pod_name': pod_image.metadata.name,
+      'image': container.image,
+    })
+    print(container.image)
+
+  # Render the HTML page with the image
+  return render_template('pod.html', namespace=namespace, images=images)
 
 if __name__ == '__main__':
   app.run()
