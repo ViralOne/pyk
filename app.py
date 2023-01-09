@@ -1,6 +1,3 @@
-import os
-import subprocess
-
 from flask import Flask, render_template
 from kubernetes import client, config
 
@@ -11,6 +8,11 @@ config.load_kube_config()
 
 # Create a Kubernetes API client
 v1 = client.CoreV1Api()
+
+@app.route('/')
+def main():
+  # Render the HTML page with the list of images
+  return render_template('index.html')
 
 @app.route('/images')
 def list_images():
