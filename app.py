@@ -65,7 +65,6 @@ def get_image(namespace):
       'pod_name': pod_image.metadata.name,
       'image': container.image,
     })
-    print(container.image)
 
   # Render the HTML page with the image
   return render_template('pod.html', namespace=namespace, images=images)
