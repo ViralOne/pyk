@@ -1,26 +1,71 @@
 <html>
   <head>
-    <style>
-      table {
-        border-collapse: collapse;
-      }
-      th, td {
-        border: 1px solid black;
-        padding: 8px;
-      }
-      tr:nth-child(even) {
-        background-color: #dddddd;
-      }
-    </style>
-    <title>PYK</title>
+  <style>
+    body {
+      text-align: center;
+    }
+    form, table {
+      display: inline-block;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+  <script src="https://unpkg.com/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#namespace').change(function() {
+        const namespace = $(this).val();
+        $.ajax({
+          url: '/pods/' + namespace,
+          success: function(data) {
+            $('#pod-select').html(data);
+          },
+        });
+      });
+    });
+  </script>
   </head>
   <body>
+    <form class="pure-form" method="post">
+      <fieldset>
+          <legend>Namespace</legend>
+          <select id="namespace" name="namespace" onchange="submitForm()">
+            {% for namespace in namespaces %}
+              <option value="{{ namespace }}">{{ namespace }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="pure-button pure-button-primary">Submit</button>
+      </fieldset>
+  </form>
+    <br>
+    <h2>Pods and Docker Images</h2>
+    <table class="pure-table">
+      <thead>
+        <tr>
+          <th>Pod Name</th>
+          <th>Docker Image</th>
+        </tr>
+        </thead>
+      <tbody>
+        {% for i in range(pods|length) %}
+        <tr>
+          <td>{{ pods[i].metadata.name }}</td>
+          <td>{{ pod_images[i] }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+    
+    <br>
+
     <h1>Implemented Paths</h1>
-    <table>
-      <tr>
-        <th>Service name</th>
-        <th>Path</th>
-      </tr>
+    <table class="pure-table">
+      <thead>
+        <tr>
+          <th>Service name</th>
+          <th>Path</th>
+        </tr>
+      </thead>
+      <tbody>
       <tr>
         <td>Pod Health</td>
         <td>/health/< NAMESPACE ></td>
@@ -33,6 +78,7 @@
         <td>Docker Images by Namespace</td>
         <td>/images/< NAMESPACE ></td>
       </tr>
+      </tbody>
     </table>
   </body>
 </html>
