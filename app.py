@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, request, render_template
 from kubernetes import client, config
 
 app = Flask(__name__)
@@ -9,10 +9,35 @@ config.load_kube_config()
 # Create a Kubernetes API client
 v1 = client.CoreV1Api()
 
-@app.route('/')
-def main():
-  # Render the HTML page with all the routes
-  return render_template('index.html')
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    # Get the list of namespaces
+    namespaces = v1.list_namespace().items
+    namespaces = [ns.metadata.name for ns in namespaces]
+    
+    if request.method == 'POST':
+        # Get the selected namespace and list of pods in that namespace
+        namespace = request.form['namespace']
+        pods = v1.list_namespaced_pod(namespace=namespace).items
+        
+        # Get the docker image for each pod
+        pod_images = []
+        for pod in pods:
+            image = pod.spec.containers[0].image
+            
+            # Rule the image was created for ECR remove all the details about the ECR URL and show only the tag
+            if (image.__contains__("amazon")):
+                parts = image.split(':')
+                image_filtered = parts[1]
+            else:
+                image_filtered = image
+            pod_images.append(image_filtered)
+        
+        # Render the template with the list of namespaces and images
+        return render_template('index.html', namespaces=namespaces, namespace=namespace, pods=pods, pod_images=pod_images)
+    else:
+        # Render the template with an empty list of images
+        return render_template('index.html', namespaces=namespaces, pod_images=[])
 
 @app.route('/images')
 def list_images():
