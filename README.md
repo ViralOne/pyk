@@ -1,11 +1,12 @@
 ### Pik
+The project was created just to learn Python with Kubernetes modules
 
 ## Start server
 `python3 ./app.py`
 
 ## URL Paths
-Check pods health in a namespace: `http://127.0.0.1:5000/health/<NAMESPACE>`
-
-Check docker image tags in a specific namespace: `http://127.0.0.1:5000/images/<NAMESPACE>`
-
-Check docker image tags in all namespaces: `http://127.0.0.1:5000/images`
+| Path | Notes |
+|---|---|
+| `/health/<NAMESPACE>` | Check pods health from a namespace |
+| `/images/<NAMESPACE>` | Check docker image tags from a specific namespace |
+| `/images` | Show all docker image tags from all namespaces |

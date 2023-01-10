@@ -27,7 +27,7 @@ def index():
             
             # Rule the image was created for ECR remove all the details about the ECR URL and show only the tag
             if (image.__contains__("amazon")):
-                parts = image.split(':')
+                parts = image.split('/')
                 image_filtered = parts[1]
             else:
                 image_filtered = image
