@@ -37,9 +37,20 @@ $(document).ready(function() {
             };
             
             data.forEach(pod => {
-                if (pod.health === 'healthy') stats.running++;
-                else if (pod.health === 'unhealthy') stats.failed++;
-                else stats.pending++;
+            const health = pod.health || 'unknown';
+            switch (health) {
+                case 'healthy':
+                    stats.running++;
+                    break;
+                case 'unhealthy':
+                    stats.failed++;
+                    break;
+                case 'unknown':
+                    console.warn(`Unknown health status for pod: ${pod.name}`);
+                    // fallthrough
+                default:
+                    stats.pending++;
+            }
             });
             
             return stats;

@@ -13,6 +13,13 @@ def handle_kubernetes_errors(f):
     def decorated_function(*args, **kwargs):
         try:
             return f(*args, **kwargs)
+        except client.rest.ApiException as e:
+            if e.status == 403:
+                return jsonify({'error': 'Access forbidden. Check RBAC permissions.'}), 403
+            elif e.status == 404:
+                return jsonify({'error': 'Resource not found.'}), 404
+            return jsonify({'error': f'Kubernetes API error: {str(e)}'}), e.status or 500
+
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return decorated_function
@@ -158,7 +165,7 @@ def list_all_images():
             image_data.append({
                 'namespace': pod.metadata.namespace,
                 'pod_name': pod.metadata.name,
-                'image': image.split(':')[1] if ':' in image else image
+                'image': image.split('/')[-1].split(':')[1] if ':' in image.split('/')[-1] else image
             })
     
     return jsonify(image_data)
@@ -167,11 +174,8 @@ def list_all_images():
 @handle_kubernetes_errors
 def list_namespaces():
     """Get list of all namespaces"""
-    try:
-        namespaces = get_namespaces()
-        return jsonify(namespaces)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    namespaces = get_namespaces()
+    return jsonify(namespaces)
 
 def calculate_age(timestamp):
     if not timestamp:
