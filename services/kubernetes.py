@@ -1,11 +1,14 @@
 from kubernetes import client, config
+from kubernetes.client.exceptions import ApiException
+from kubernetes.config import ConfigException
+import logging
 
 # Initialize Kubernetes configuration
 try:
     config.load_kube_config()
-except Exception as e:
-    print(f"Error loading kubeconfig: {e}")
-    print("Make sure you have a valid kubeconfig file and kubectl is properly configured")
+except ConfigException as e:
+    logging.error(f"Error loading kubeconfig: {e}")
+    logging.error("Make sure you have a valid kubeconfig file and kubectl is properly configured")
 
 # Initialize the API client
 v1 = client.CoreV1Api()
@@ -15,24 +18,24 @@ def get_namespaces():
     try:
         namespaces = v1.list_namespace().items
         return [ns.metadata.name for ns in namespaces]
-    except Exception as e:
-        print(f"Error getting namespaces: {e}")
+    except ApiException as e:
+        logging.error(f"Error getting namespaces: {e}")
         return []
 
 def get_pods_in_namespace(namespace):
     """Get all pods in a specific namespace"""
     try:
         return v1.list_namespaced_pod(namespace=namespace).items
-    except Exception as e:
-        print(f"Error getting pods in namespace {namespace}: {e}")
+    except ApiException as e:
+        logging.error(f"Error getting pods in namespace {namespace}: {e}")
         return []
 
 def get_all_pods():
     """Get pods from all namespaces"""
     try:
         return v1.list_pod_for_all_namespaces().items
-    except Exception as e:
-        print(f"Error getting pods from all namespaces: {e}")
+    except ApiException as e:
+        logging.error(f"Error getting pods from all namespaces: {e}")
         return []
 
 def get_pod_resources(pod):
@@ -102,6 +105,6 @@ def get_namespace_events(namespace):
             })
         
         return sorted(event_data, key=lambda x: x['last_timestamp'] if x['last_timestamp'] else '', reverse=True)
-    except Exception as e:
-        print(f"Error getting events for namespace {namespace}: {e}")
+    except ApiException as e:
+        logging.error(f"Error getting events for namespace {namespace}: {e}")
         return []

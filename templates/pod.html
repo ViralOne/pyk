@@ -49,19 +49,31 @@ $(document).ready(function() {
         const tbody = table.find('tbody');
         const loading = $('#imagesTable .loading');
         
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle"></i>
+                <p>No pods found in namespace "${namespace}"</p>
+            `);
+            return;
+        }
+        
         // Add new rows
         data.forEach(function(item) {
-            tbody.append(`
-                <tr>
-                    <td>${item.pod_name}</td>
-                    <td>${item.image}</td>
-                </tr>
-            `);
+            const row = $('<tr></tr>');
+            const podNameCell = $('<td></td>').text(item.pod_name);
+            const imageCell = $('<td></td>').text(item.image);
+            tbody.append(row);
+            row.append(podNameCell, imageCell);
         });
         
         // Hide loading, show table
         loading.hide();
         table.show();
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        loading.html(`
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading images. Please try again later.</p>
+        `);
     });
 });
 </script>

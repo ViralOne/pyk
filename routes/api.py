@@ -33,6 +33,21 @@ def get_pod_data(namespace):
     
     return jsonify(pod_data)
 
+@api.route('/health/<namespace>')
+def get_health(namespace):
+    """Get health status for pods in a namespace"""
+    pods = get_pods_in_namespace(namespace)
+    health_data = []
+    
+    for pod in pods:
+        health = get_pod_health(pod)
+        health_data.append({
+            'name': pod.metadata.name,
+            'health': health
+        })
+    
+    return jsonify(health_data)
+
 @api.route('/events/<namespace>')
 def get_events(namespace):
     """Get events for a namespace"""

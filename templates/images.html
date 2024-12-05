@@ -49,13 +49,12 @@ $(document).ready(function() {
                 item.image.toLowerCase().includes(lowercaseSearch)
             ) {
                 visibleCount++;
-                tbody.append(`
-                    <tr>
-                        <td>${item.namespace}</td>
-                        <td>${item.pod_name}</td>
-                        <td>${item.image}</td>
-                    </tr>
-                `);
+                const row = $('<tr></tr>');
+                const namespaceCell = $('<td></td>').text(item.namespace);
+                const podNameCell = $('<td></td>').text(item.pod_name);
+                const imageCell = $('<td></td>').text(item.image);
+                tbody.append(row);
+                row.append(namespaceCell, podNameCell, imageCell);
             }
         });
         
@@ -66,7 +65,16 @@ $(document).ready(function() {
     // Fetch data from API
     $.get('/api/images', function(data) {
         const table = $('#imagesTable table');
+        const tbody = table.find('tbody');
         const loading = $('#imagesTable .loading');
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle"></i>
+                <p>No pods found in any namespace</p>
+            `);
+            return;
+        }
         
         allData = data;
         $('#totalCount').text(data.length);
@@ -77,6 +85,11 @@ $(document).ready(function() {
         // Hide loading, show table
         loading.hide();
         table.show();
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        loading.html(`
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading images. Please try again later.</p>
+        `);
     });
     
     // Search handler with debounce

@@ -105,6 +105,18 @@ $(document).ready(function() {
         $.post('/', { namespace: namespace }, function(data) {
             $("#podTable tbody").empty();
             
+            if (data.length === 0) {
+                $("#podTable tbody").html(`
+                    <tr>
+                        <td colspan="4" class="loading">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No pods found in namespace "${namespace}"</p>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+            
             data.forEach(function(pod) {
                 const imageTag = pod.image.includes(':') ? pod.image.split(':')[1] : pod.image;
                 $("#podTable tbody").append(`
@@ -120,6 +132,15 @@ $(document).ready(function() {
                     </tr>
                 `);
             });
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            $("#podTable tbody").html(`
+                <tr>
+                    <td colspan="4" class="loading">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Error loading pods. Please try again later.</p>
+                    </td>
+                </tr>
+            `);
         });
     }
     

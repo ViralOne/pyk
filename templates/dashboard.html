@@ -15,33 +15,36 @@
 <div class="card">
     <h2><i class="fas fa-tachometer-alt"></i> Cluster Overview</h2>
     <div class="health-summary">
-        <div class="health-stat">
+        <div class="health-stat healthy">
             <i class="fas fa-check-circle"></i>
-            <span id="healthyCount">0</span> Healthy
+            <span id="healthyCount">0</span>
+            <div class="health-stat-label">Healthy Pods</div>
         </div>
-        <div class="health-stat">
+        <div class="health-stat unhealthy">
             <i class="fas fa-exclamation-circle"></i>
-            <span id="unhealthyCount">0</span> Unhealthy
+            <span id="unhealthyCount">0</span>
+            <div class="health-stat-label">Unhealthy Pods</div>
         </div>
-        <div class="health-stat">
+        <div class="health-stat unknown">
             <i class="fas fa-question-circle"></i>
-            <span id="unknownCount">0</span> Unknown
+            <span id="unknownCount">0</span>
+            <div class="health-stat-label">Unknown Status</div>
         </div>
     </div>
     
     <div id="clusterTable" style="display: none;">
-        <div class="pure-table-wrapper">
+        <div class="table-container">
             <table class="pure-table pure-table-striped">
                 <thead>
                     <tr>
-                        <th>Pod Name</th>
-                        <th>Status</th>
-                        <th>Image</th>
-                        <th>CPU</th>
-                        <th>Memory</th>
-                        <th>Age</th>
-                        <th>Restarts</th>
-                        <th>Actions</th>
+                        <th class="col-name">Pod Name</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-image">Image</th>
+                        <th class="col-resource">CPU</th>
+                        <th class="col-resource">Memory</th>
+                        <th class="col-age">Age</th>
+                        <th class="col-restarts">Restarts</th>
+                        <th class="col-actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -136,6 +139,20 @@ $(document).ready(function() {
         // Fetch pod data
         $.get(`/api/pods/${namespace}`, function(data) {
             $("#clusterTable tbody").empty();
+            
+            if (data.length === 0) {
+                $("#clusterTable tbody").html(`
+                    <tr>
+                        <td colspan="8" class="loading">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No pods found in namespace "${namespace}"</p>
+                        </td>
+                    </tr>
+                `);
+                updateHealthCounts([]);
+                return;
+            }
+            
             updateHealthCounts(data);
             
             data.forEach(function(pod) {
@@ -168,11 +185,33 @@ $(document).ready(function() {
                     </tr>
                 `);
             });
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            $("#clusterTable tbody").html(`
+                <tr>
+                    <td colspan="8" class="loading">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Error loading cluster information. Please try again later.</p>
+                    </td>
+                </tr>
+            `);
+            updateHealthCounts([]);
         });
         
         // Fetch events
         $.get(`/api/events/${namespace}`, function(events) {
             $(".events-table tbody").empty();
+            
+            if (events.length === 0) {
+                $(".events-table tbody").html(`
+                    <tr>
+                        <td colspan="6" class="loading">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No events found in namespace "${namespace}"</p>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
             
             events.forEach(function(event) {
                 const typeClass = event.type.toLowerCase();
@@ -187,6 +226,15 @@ $(document).ready(function() {
                     </tr>
                 `);
             });
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            $(".events-table tbody").html(`
+                <tr>
+                    <td colspan="6" class="loading">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Error loading events. Please try again later.</p>
+                    </td>
+                </tr>
+            `);
         });
     }
     

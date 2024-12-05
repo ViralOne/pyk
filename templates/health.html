@@ -49,6 +49,14 @@ $(document).ready(function() {
         const tbody = table.find('tbody');
         const loading = $('#healthTable .loading');
         
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle"></i>
+                <p>No pods found in namespace "${namespace}"</p>
+            `);
+            return;
+        }
+        
         // Add new rows
         data.forEach(function(pod) {
             tbody.append(`
@@ -62,6 +70,11 @@ $(document).ready(function() {
         // Hide loading, show table
         loading.hide();
         table.show();
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        loading.html(`
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading health status. Please try again later.</p>
+        `);
     });
 });
 </script>
