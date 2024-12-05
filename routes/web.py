@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for
 from services.kubernetes import (
-    get_namespaces, get_pods_in_namespace, get_pod_health,
-    get_pod_images
+    get_namespaces
 )
 
 web = Blueprint('web', __name__)

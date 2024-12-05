@@ -1,8 +1,7 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask
 from routes.web import web
 from routes.api import api
 from utils.config import Config
-from services.kubernetes import get_pods_in_namespace, get_namespaces, get_pod_health
 from services.statistics import get_cluster_stats
 
 app = Flask(__name__)

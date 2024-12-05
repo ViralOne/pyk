@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+from functools import wraps
 from services.kubernetes import (
     get_pods_in_namespace, get_pod_health, get_pod_resources,
     get_pod_images, get_pod_restart_count, get_namespace_events,
@@ -7,7 +8,17 @@ from services.kubernetes import (
 
 api = Blueprint('api', __name__)
 
+def handle_kubernetes_errors(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    return decorated_function
+
 @api.route('/pods/<namespace>')
+@handle_kubernetes_errors
 def get_pod_data(namespace):
     """Get detailed pod information for a namespace"""
     pods = get_pods_in_namespace(namespace)
@@ -27,13 +38,14 @@ def get_pod_data(namespace):
             'health': health,
             'image': images[0] if images else 'No image',
             'resources': resources,
-            'age': pod.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if pod.metadata.creation_timestamp else 'Unknown',
+            'age': calculate_age(pod.metadata.creation_timestamp),
             'restarts': restart_count
         })
     
     return jsonify(pod_data)
 
 @api.route('/health/<namespace>')
+@handle_kubernetes_errors
 def get_health(namespace):
     """Get health status for pods in a namespace"""
     pods = get_pods_in_namespace(namespace)
@@ -46,21 +58,7 @@ def get_health(namespace):
         restart_count = get_pod_restart_count(pod)
         
         # Calculate age
-        age = 'N/A'
-        if pod.metadata.creation_timestamp:
-            from datetime import datetime, timezone
-            now = datetime.now(timezone.utc)
-            age_delta = now - pod.metadata.creation_timestamp
-            days = age_delta.days
-            hours = age_delta.seconds // 3600
-            minutes = (age_delta.seconds % 3600) // 60
-            
-            if days > 0:
-                age = f"{days}d"
-            elif hours > 0:
-                age = f"{hours}h"
-            else:
-                age = f"{minutes}m"
+        age = calculate_age(pod.metadata.creation_timestamp)
         
         # Get status
         status = 'Unknown'
@@ -89,6 +87,7 @@ def get_health(namespace):
     return jsonify(health_data)
 
 @api.route('/events/<namespace>')
+@handle_kubernetes_errors
 def get_events(namespace):
     """Get events for a namespace"""
     events = get_namespace_events(namespace)
@@ -130,6 +129,7 @@ def get_events(namespace):
     return jsonify(formatted_events)
 
 @api.route('/images/<namespace>')
+@handle_kubernetes_errors
 def get_images(namespace):
     """Get container images for a namespace"""
     pods = get_pods_in_namespace(namespace)
@@ -146,6 +146,7 @@ def get_images(namespace):
     return jsonify(image_data)
 
 @api.route('/images')
+@handle_kubernetes_errors
 def list_all_images():
     """Get container images from all namespaces"""
     pods = get_all_pods()
@@ -163,6 +164,7 @@ def list_all_images():
     return jsonify(image_data)
 
 @api.route('/namespaces')
+@handle_kubernetes_errors
 def list_namespaces():
     """Get list of all namespaces"""
     try:
@@ -171,7 +173,26 @@ def list_namespaces():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def calculate_age(timestamp):
+    if not timestamp:
+        return 'N/A'
+    
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    age_delta = now - timestamp
+    days = age_delta.days
+    hours = age_delta.seconds // 3600
+    minutes = (age_delta.seconds % 3600) // 60
+    
+    if days > 0:
+        return f"{days}d"
+    elif hours > 0:
+        return f"{hours}h"
+    return f"{minutes}m"
+
+
 @api.route('/pods/<namespace>/<pod_name>')
+@handle_kubernetes_errors
 def get_pod_details(namespace, pod_name):
     """Get detailed information about a specific pod"""
     pods = get_pods_in_namespace(namespace)
@@ -187,21 +208,7 @@ def get_pod_details(namespace, pod_name):
     images = get_pod_images(pod)
     
     # Calculate age
-    age = 'N/A'
-    if pod.metadata.creation_timestamp:
-        from datetime import datetime, timezone
-        now = datetime.now(timezone.utc)
-        age_delta = now - pod.metadata.creation_timestamp
-        days = age_delta.days
-        hours = age_delta.seconds // 3600
-        minutes = (age_delta.seconds % 3600) // 60
-        
-        if days > 0:
-            age = f"{days}d"
-        elif hours > 0:
-            age = f"{hours}h"
-        else:
-            age = f"{minutes}m"
+    age = calculate_age(pod.metadata.creation_timestamp)
     
     # Get detailed status
     status = 'Unknown'

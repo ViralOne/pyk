@@ -43,10 +43,9 @@ $(document).ready(function() {
         const loading = $('#imagesTable .loading');
         
         if (data.length === 0) {
-            loading.html(`
-                <i class="fas fa-info-circle"></i>
-                <p>No images found</p>
-            `);
+            const icon = $('<i>').addClass('fas fa-info-circle');
+            const message = $('<p>').text('No images found');
+            loading.empty().append(icon, message);
             return;
         }
         
@@ -81,13 +80,23 @@ $(document).ready(function() {
         `);
     });
     
-    // Filter functionality
-    $('#filterInput').on('keyup', function() {
-        const value = $(this).val().toLowerCase();
-        $('#imagesTable tbody tr').filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-        });
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    $('#filterInput').on('keyup', debounce(function() {
+            const value = $(this).val().toLowerCase();
+            $('#imagesTable tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            });
+    }, 300));
     });
-});
 </script>
 {% endblock %}

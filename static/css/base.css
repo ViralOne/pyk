@@ -132,20 +132,6 @@ body {
     color: var(--text-color);
 }
 
-.search-box::before {
-    content: "\f002";
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--secondary-color);
-    font-size: 0.9rem;
-    pointer-events: none;
-    opacity: 0.7;
-}
-
 .search-box input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -569,7 +555,7 @@ body {
 .truncate-text:hover::after {
     content: attr(data-full-text);
     position: absolute;
-    left: 0;
+    left: 50%;
     top: 100%;
     background: white;
     padding: 0.5rem;
@@ -579,6 +565,8 @@ body {
     white-space: normal;
     max-width: 400px;
     word-break: break-all;
+    transform: translateX(-50%);
+    margin-top: 0.5rem;
 }
 
 @media (max-width: 768px) {
@@ -592,5 +580,11 @@ body {
 
     .truncate {
         max-width: 200px;
+    }
+    
+    .truncate-text:hover::after {
+        left: 0;
+        transform: none;
+        max-width: calc(100vw - 2rem);
     }
 }

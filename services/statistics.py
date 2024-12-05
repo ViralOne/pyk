@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
-from services.kubernetes import get_all_pods
 from kubernetes import client, config
-from kubernetes.client import ApiClient
+import traceback
+import logging
 import json
 
 def format_cpu(cpu_str):
@@ -109,9 +108,8 @@ def get_cluster_stats():
         return stats
         
     except Exception as e:
-        print(f"Error getting cluster stats: {str(e)}")
-        import traceback
-        traceback.print_exc()  # Print full stack trace
+        logging.error(f"Error getting cluster stats: {str(e)}")
+        logging.error(traceback.format_exc())
         return {
             'node_count': 0,
             'node_usage': 0,
