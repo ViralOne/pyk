@@ -3,32 +3,45 @@
 {% block title %}Kubernetes Dashboard - Images{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2><i class="fas fa-box"></i> Docker Images</h2>
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-6 text-gray-900 dark:text-white">
+        <i class="fas fa-box"></i> Docker Images
+    </h2>
     
-    <div class="pure-form">
-        <div class="search-box">
-            <input type="text" id="filterInput" name="namespace" placeholder="Filter images..." autocomplete="off">
+    <div class="mb-6">
+        <div class="relative">
+            <input type="text" 
+                   id="filterInput" 
+                   name="namespace" 
+                   placeholder="Filter images..." 
+                   autocomplete="off"
+                   class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <i class="fas fa-search text-gray-400 dark:text-gray-500"></i>
+            </div>
         </div>
     </div>
 
-
-    <div id="imagesTable">
-        <div class="loading">
-            <i class="fas fa-spinner fa-spin"></i>
+    <div id="imagesTable" class="relative overflow-x-auto">
+        <div class="loading flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
             <p>Loading images...</p>
         </div>
-        <table class="pure-table pure-table-striped" style="display: none;">
-            <thead>
+        <table class="w-full text-left hidden">
+            <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th>Namespace</th>
-                    <th>Pod Name</th>
-                    <th>Image</th>
+                    <th class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">Namespace</th>
+                    <th class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">Pod Name</th>
+                    <th class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">Image</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
             </tbody>
         </table>
+        <div id="noResults" class="hidden flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-search text-2xl mb-2"></i>
+            <p>No matching images found</p>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -36,46 +49,41 @@
 {% block extra_scripts %}
 <script>
 $(document).ready(function() {
+    const table = $('#imagesTable table');
+    const tbody = table.find('tbody');
+    const loading = $('#imagesTable .loading');
+    const noResults = $('#noResults');
+    
     // Load images
     $.get('/api/images', function(data) {
-        const table = $('#imagesTable table');
-        const tbody = table.find('tbody');
-        const loading = $('#imagesTable .loading');
-        
         if (data.length === 0) {
-            const icon = $('<i>').addClass('fas fa-info-circle');
-            const message = $('<p>').text('No images found');
-            loading.empty().append(icon, message);
+            loading.html(`
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                <p>No images found</p>
+            `);
             return;
         }
         
         data.forEach(function(item) {
-            const row = $('<tr></tr>');
+            const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
             const namespaceLink = $('<a></a>')
                 .attr('href', `/namespace/${item.namespace}`)
                 .text(item.namespace)
-                .css({
-                    'color': '#3498db',
-                    'text-decoration': 'none'
-                })
-                .hover(
-                    function() { $(this).css('text-decoration', 'underline'); },
-                    function() { $(this).css('text-decoration', 'none'); }
-                );
+                .addClass('text-primary-600 dark:text-primary-400 hover:underline');
             
             row.append(
-                $('<td></td>').append(namespaceLink),
-                $('<td></td>').text(item.pod_name),
-                $('<td></td>').text(item.image)
+                $('<td></td>').addClass('px-4 py-3 text-sm text-gray-900 dark:text-gray-100').append(namespaceLink),
+                $('<td></td>').addClass('px-4 py-3 text-sm text-gray-900 dark:text-gray-100').text(item.pod_name),
+                $('<td></td>').addClass('px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-mono').text(item.image)
             );
             tbody.append(row);
         });
         
         loading.hide();
-        table.show();
+        table.removeClass('hidden');
     }).fail(function() {
-        $('#imagesTable .loading').html(`
-            <i class="fas fa-exclamation-circle"></i>
+        loading.html(`
+            <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
             <p>Error loading images. Please try again later.</p>
         `);
     });
@@ -91,12 +99,52 @@ $(document).ready(function() {
             timeout = setTimeout(later, wait);
         };
     }
-    $('#filterInput').on('keyup', debounce(function() {
-            const value = $(this).val().toLowerCase();
-            $('#imagesTable tbody tr').filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-            });
-    }, 300));
-    });
+
+    function filterTable() {
+        const searchInput = document.getElementById('filterInput');
+        if (!searchInput) return;
+        
+        const value = searchInput.value.toLowerCase().trim();
+        const table = $('#imagesTable table');
+        const noResults = $('#noResults');
+        let hasVisibleRows = false;
+
+        // If search is empty, show all rows
+        if (!value) {
+            $('#imagesTable tbody tr').removeClass('hidden');
+            table.removeClass('hidden');
+            noResults.addClass('hidden');
+            return;
+        }
+
+        $('#imagesTable tbody tr').each(function() {
+            const row = $(this);
+            const namespace = row.find('td:eq(0) a').text().toLowerCase();
+            const podName = row.find('td:eq(1)').text().toLowerCase();
+            const image = row.find('td:eq(2)').text().toLowerCase();
+            
+            // Check if any of the fields match the search value
+            const matches = namespace.includes(value) || 
+                          podName.includes(value) || 
+                          image.includes(value);
+            
+            // Show or hide the row based on the match
+            row.toggleClass('hidden', !matches);
+            if (matches) {
+                hasVisibleRows = true;
+            }
+        });
+
+        // Show/hide table and no results message
+        table.toggleClass('hidden', !hasVisibleRows);
+        noResults.toggleClass('hidden', hasVisibleRows);
+        if (!hasVisibleRows) {
+            noResults.find('p').text(`No images found matching "${value}"`);
+        }
+    }
+
+    // Attach the debounced filter function to the input
+    $('#filterInput').on('keyup', debounce(filterTable, 300));
+});
 </script>
 {% endblock %}

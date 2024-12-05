@@ -3,135 +3,496 @@
 {% block title %}Kubernetes Dashboard - {{ namespace }}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/namespace.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
         <i class="fas fa-cube"></i> 
-        Namespace: <span class="status healthy">{{ namespace }}</span>
+        Namespace: <span class="px-2 py-1 rounded-md bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">{{ namespace }}</span>
     </h2>
 </div>
 
-<div class="card">
-    <h2>
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
         <i class="fas fa-heart"></i> 
         Pod Status
     </h2>
     <div id="healthTable">
-        <div class="loading">
-            <i class="fas fa-spinner fa-spin"></i>
+        <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
             <p>Loading pod status...</p>
         </div>
-        <table class="pure-table pure-table-striped" style="display: none;">
-            <thead>
+        <table class="w-full hidden">
+            <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th>Pod Name</th>
-                    <th>Status</th>
-                    <th>CPU</th>
-                    <th>Memory</th>
-                    <th>Restarts</th>
-                    <th>Age</th>
-                    <th>Actions</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Pod Name</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Status</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">CPU</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Memory</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Restarts</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Age</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
             </tbody>
         </table>
     </div>
 </div>
 
-<div class="card">
-    <h2>
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
         <i class="fas fa-box"></i> 
         Docker Images
     </h2>
     <div id="imagesTable">
-        <div class="loading">
-            <i class="fas fa-spinner fa-spin"></i>
+        <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
             <p>Loading images...</p>
         </div>
-        <table class="pure-table pure-table-striped" style="display: none;">
-            <thead>
+        <table class="w-full hidden">
+            <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th>Pod Name</th>
-                    <th>Image</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Pod Name</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Image</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
             </tbody>
         </table>
     </div>
 </div>
 
-<div class="card">
-    <h2><i class="fas fa-history"></i> Recent Events</h2>
-    <div id="eventsTable">
-        <div class="loading">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading events...</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+            <i class="fas fa-cogs"></i> 
+            ConfigMaps
+        </h2>
+        <div id="configMapsTable">
+            <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <p>Loading configmaps...</p>
+            </div>
+            <div class="max-h-[400px] overflow-y-auto">
+                <table class="w-full hidden">
+                    <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Name</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Keys</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Age</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <table class="pure-table pure-table-striped" style="display: none;">
-            <thead>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+            <i class="fas fa-key"></i> 
+            Secrets
+        </h2>
+        <div id="secretsTable">
+            <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <p>Loading secrets...</p>
+            </div>
+            <div class="max-h-[400px] overflow-y-auto">
+                <table class="w-full hidden">
+                    <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Name</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Type</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Age</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+        <i class="fas fa-network-wired"></i> 
+        Services
+    </h2>
+    <div id="servicesTable">
+        <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Loading services...</p>
+        </div>
+        <table class="w-full hidden">
+            <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th>Type</th>
-                    <th>Reason</th>
-                    <th>Object</th>
-                    <th>Message</th>
-                    <th>Count</th>
-                    <th>Last Seen</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Name</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Type</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Cluster IP</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">External IP</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Ports</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Age</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+        <i class="fas fa-globe"></i> 
+        Ingresses
+    </h2>
+    <div id="ingressesTable">
+        <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Loading ingresses...</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4">
+        </div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+        <i class="fas fa-history"></i> Recent Events
+    </h2>
+    <div id="eventsTable">
+        <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Loading events...</p>
+        </div>
+        <table class="w-full hidden">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Type</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Reason</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Object</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Message</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Count</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Last Seen</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
             </tbody>
         </table>
     </div>
 </div>
 
 <!-- Pod Details Modal -->
-<div id="podDetailsModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <div class="modal-header">
-            <h2><i class="fas fa-cube"></i> <span id="modalPodName"></span></h2>
-        </div>
-        <div id="modalContent">
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading pod details...</p>
+<div id="podDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl mx-auto mt-20 max-h-[80vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+                    <i class="fas fa-cube"></i> 
+                    <span id="modalPodName"></span>
+                </h2>
+                <button class="close-modal text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modalContent">
+                <div class="flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-spinner fa-spin text-2xl"></i>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+
+<!-- Debug Panel Modal -->
+<div id="debugPanel" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl mx-auto mt-20 max-h-[80vh] overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <i class="fas fa-bug"></i> Debug View
+            </h3>
+            <button onclick="closeDebugPanel()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-hidden">
+            <div class="flex h-full">
+                <!-- Resource Details -->
+                <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+                    <div id="debugResourceDetails" class="space-y-4">
+                        <div class="animate-pulse">
+                            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Related Resources -->
+                <div class="flex-1 p-4 overflow-y-auto">
+                    <div id="debugRelatedResources" class="space-y-4">
+                        <div class="animate-pulse">
+                            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+const namespace = '{{ namespace }}';
+
+// Debug panel functionality
+function closeDebugPanel() {
+    $('#debugPanel').addClass('hidden');
+}
+
+function showDebugPanel(resourceType, resourceName) {
+    const debugPanel = $('#debugPanel');
+    const resourceDetails = $('#debugResourceDetails');
+    const relatedResources = $('#debugRelatedResources');
+    
+    debugPanel.removeClass('hidden');
+    
+    // Show loading state
+    resourceDetails.html(`
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+        </div>
+    `);
+    
+    relatedResources.html(`
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+        </div>
+    `);
+    
+    // Fetch resource details and relationships
+    $.get(`/api/debug/${resourceType}/${namespace}/${resourceName}`)
+        .done(function(data) {
+            // Resource Details
+            let detailsHtml = `
+                <div class="mb-4">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Resource Info</h4>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">${data.type}</span>
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                                ${data.name}
+                            </span>
+                        </div>
+                        <div class="space-y-2">
+            `;
+            
+            // Add resource-specific details
+            Object.entries(data.details).forEach(([key, value]) => {
+                if (key !== 'type' && key !== 'name') {
+                    detailsHtml += `
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">${key}:</span>
+                            <span class="text-gray-900 dark:text-white font-mono">${Array.isArray(value) ? value.join(', ') : value}</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            detailsHtml += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add events section if there are any
+            if (data.events && data.events.length > 0) {
+                detailsHtml += `
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Events</h4>
+                        <div class="space-y-2">
+                `;
+                
+                data.events.forEach(event => {
+                    detailsHtml += `
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 text-sm">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="w-2 h-2 rounded-full ${event.type === 'Normal' ? 'bg-green-500' : 'bg-yellow-500'}"></span>
+                                <span class="font-medium text-gray-900 dark:text-white">${event.reason}</span>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-400">${event.message}</p>
+                            <div class="mt-1 text-xs text-gray-500">
+                                Count: ${event.count} | Last seen: ${event.last_timestamp}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                detailsHtml += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resourceDetails.html(detailsHtml);
+            
+            // Related Resources
+            let relatedHtml = `
+                <div class="space-y-4">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Related Resources</h4>
+            `;
+            
+            Object.entries(data.related).forEach(([type, resources]) => {
+                if (resources.length > 0) {
+                    relatedHtml += `
+                        <div>
+                            <h5 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">${type}</h5>
+                            <div class="space-y-2">
+                    `;
+                    
+                    resources.forEach(resource => {
+                        relatedHtml += `
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                                 onclick="showDebugPanel('${type.toLowerCase().slice(0, -1)}', '${resource.name}')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">${resource.name}</span>
+                                        ${resource.status ? `
+                                            <span class="px-2 py-1 text-xs rounded-full ${
+                                                resource.status === 'Healthy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' :
+                                                resource.status === 'Warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' :
+                                                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                                            }">${resource.status}</span>
+                                        ` : ''}
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </div>
+                                ${resource.info ? `
+                                    <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">${resource.info}</div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    relatedHtml += `
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (Object.keys(data.related).length === 0) {
+                relatedHtml += `
+                    <div class="text-sm text-gray-500 dark:text-gray-400">No related resources found</div>
+                `;
+            }
+            
+            relatedHtml += `
+                </div>
+            `;
+            
+            relatedResources.html(relatedHtml);
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            const errorMessage = jqXHR.responseJSON?.error || errorThrown;
+            resourceDetails.html(`
+                <div class="text-red-500 dark:text-red-400">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    Error loading resource details: ${errorMessage}
+                </div>
+            `);
+            
+            relatedResources.html(`
+                <div class="text-red-500 dark:text-red-400">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    Error loading related resources
+                </div>
+            `);
+        });
+}
+
+// Add debug click handlers to resources
+function addDebugHandlers() {
+    // ConfigMaps
+    $('#configMapsTable tbody tr').click(function() {
+        const name = $(this).find('td:first').text();
+        showDebugPanel('configmap', name);
+    }).addClass('cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700');
+    
+    // Secrets
+    $('#secretsTable tbody tr').click(function() {
+        const name = $(this).find('td:first').text();
+        showDebugPanel('secret', name);
+    }).addClass('cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700');
+    
+    // Services
+    $('#servicesTable tbody tr').click(function() {
+        const name = $(this).find('td:first').text();
+        showDebugPanel('service', name);
+    }).addClass('cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700');
+    
+    // Ingresses
+    $('#ingressesTable .grid > div').click(function() {
+        const name = $(this).find('.font-medium:first').text();
+        showDebugPanel('ingress', name);
+    }).addClass('cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700');
+}
+
+// Add debug handlers after loading resources
+$(document).ready(function() {
+    const originalCallbacks = {
+        configmaps: $.get,
+        secrets: $.get,
+        services: $.get,
+        ingresses: $.get
+    };
+    
+    // Wrap the callbacks to add debug handlers
+    ['configmaps', 'secrets', 'services', 'ingresses'].forEach(type => {
+        const originalCallback = $[type === 'ingresses' ? 'getJSON' : 'get'];
+        $[type === 'ingresses' ? 'getJSON' : 'get'] = function(url, callback) {
+            if (url.includes(`/api/${type}/`)) {
+                return originalCallback.call(this, url, function(data) {
+                    callback(data);
+                    addDebugHandlers();
+                });
+            }
+            return originalCallback.apply(this, arguments);
+        };
+    });
+});
+
 $(document).ready(function() {
     const namespace = '{{ namespace }}';
     const modal = document.getElementById('podDetailsModal');
-    const closeBtn = document.getElementsByClassName('close-modal')[0];
+    const closeBtn = document.querySelector('.close-modal');
     
     // Close modal when clicking the close button or outside the modal
-    closeBtn.onclick = function() {
-        modal.style.display = "none";
-    }
+    closeBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+    });
     
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            modal.classList.add('hidden');
         }
-    }
+    });
     
     function showPodDetails(podName) {
-        // Show modal and loading spinner
-        modal.style.display = "block";
+        modal.classList.remove('hidden');
         document.getElementById('modalPodName').textContent = podName;
         document.getElementById('modalContent').innerHTML = `
-            <div class="loading-spinner" style="display: block;">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading pod details...</p>
+            <div class="flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
             </div>
         `;
         
@@ -139,112 +500,137 @@ $(document).ready(function() {
         $.get(`/api/pods/${namespace}/${podName}`, function(data) {
             // Create tabs
             const tabs = `
-                <div class="tabs">
-                    <button class="tab active" data-tab="overview">
-                        <i class="fas fa-info-circle"></i> Overview
-                    </button>
-                    <button class="tab" data-tab="resources">
-                        <i class="fas fa-microchip"></i> Resources
-                    </button>
-                    <button class="tab" data-tab="containers">
-                        <i class="fas fa-box"></i> Containers
-                    </button>
+                <div class="border-b border-gray-200 dark:border-gray-700">
+                    <nav class="flex space-x-4" aria-label="Tabs">
+                        <button class="tab-btn active px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-primary-500 text-primary-600 dark:text-primary-500" data-tab="overview">
+                            <i class="fas fa-info-circle"></i> Overview
+                        </button>
+                        <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" data-tab="resources">
+                            <i class="fas fa-microchip"></i> Resources
+                        </button>
+                        <button class="tab-btn px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" data-tab="containers">
+                            <i class="fas fa-box"></i> Containers
+                        </button>
+                    </nav>
                 </div>
             `;
-            
+
             // Overview tab content
             const overviewContent = `
-                <div id="overview" class="tab-content active">
-                    <div class="resource-grid">
-                        <div class="resource-item">
-                            <strong>Status:</strong> 
-                            <span class="status-badge ${data.status.toLowerCase()}">${data.status}</span>
+                <div id="overview" class="tab-content block">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
+                            <div class="mt-1">
+                                <span class="px-2 py-1 rounded-md ${data.status === 'Running' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'}">${data.status}</span>
+                            </div>
                         </div>
-                        <div class="resource-item">
-                            <strong>Created:</strong> ${data.created}
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Created</div>
+                            <div class="mt-1 text-gray-900 dark:text-gray-100">${data.created}</div>
                         </div>
-                        <div class="resource-item">
-                            <strong>Node:</strong> ${data.node}
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Node</div>
+                            <div class="mt-1 text-gray-900 dark:text-gray-100">${data.node}</div>
                         </div>
-                        <div class="resource-item">
-                            <strong>IP:</strong> ${data.ip}
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">IP</div>
+                            <div class="mt-1 text-gray-900 dark:text-gray-100">${data.ip}</div>
                         </div>
                     </div>
                 </div>
             `;
-            
+
             // Resources tab content
             const resourcesContent = `
-                <div id="resources" class="tab-content">
-                    <div class="resource-grid">
-                        <div class="resource-item">
-                            <strong>CPU Request:</strong> ${data.resources.cpu.request}
+                <div id="resources" class="tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">CPU Request</div>
+                            <div class="mt-1 text-gray-900 dark:text-gray-100">${data.resources.cpu.request}</div>
                         </div>
-                        <div class="resource-item">
-                            <strong>CPU Limit:</strong> ${data.resources.cpu.limit}
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">CPU Limit</div>
+                            <div class="mt-1 text-gray-900 dark:text-gray-100">${data.resources.cpu.limit}</div>
                         </div>
-                        <div class="resource-item">
-                            <strong>Memory Request:</strong> ${data.resources.memory.request}
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Memory Request</div>
+                            <div class="mt-1 text-gray-900 dark:text-gray-100">${data.resources.memory.request}</div>
                         </div>
-                        <div class="resource-item">
-                            <strong>Memory Limit:</strong> ${data.resources.memory.limit}
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Memory Limit</div>
+                            <div class="mt-1 text-gray-900 dark:text-gray-100">${data.resources.memory.limit}</div>
                         </div>
                     </div>
                 </div>
             `;
-            
+
             // Containers tab content
             const containersContent = `
-                <div id="containers" class="tab-content">
-                    ${data.containers.map(container => `
-                        <div class="container-status">
-                            <h4>${container.name}</h4>
-                            <div class="resource-grid">
-                                <div class="resource-item">
-                                    <strong>Status:</strong> 
-                                    <span class="status-badge ${container.state.toLowerCase()}">${container.state}</span>
-                                </div>
-                                <div class="resource-item">
-                                    <strong>Ready:</strong> ${container.ready ? 'Yes' : 'No'}
-                                </div>
-                                <div class="resource-item">
-                                    <strong>Restarts:</strong> ${container.restarts}
+                <div id="containers" class="tab-content hidden">
+                    <div class="space-y-4 mt-4">
+                        ${data.containers.map(container => `
+                            <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                                <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">${container.name}</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-white dark:bg-gray-700 p-3 rounded-md">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
+                                        <div class="mt-1">
+                                            <span class="px-2 py-1 rounded-md ${container.state === 'Running' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'}">${container.state}</span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white dark:bg-gray-700 p-3 rounded-md">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Ready</div>
+                                        <div class="mt-1 text-gray-900 dark:text-gray-100">${container.ready ? 'Yes' : 'No'}</div>
+                                    </div>
+                                    <div class="bg-white dark:bg-gray-700 p-3 rounded-md">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Restarts</div>
+                                        <div class="mt-1 text-gray-900 dark:text-gray-100">${container.restarts}</div>
+                                    </div>
+                                    <div class="bg-white dark:bg-gray-700 p-3 rounded-md">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Image</div>
+                                        <div class="mt-1 text-gray-900 dark:text-gray-100 break-all">${container.image}</div>
+                                    </div>
+                                    ${container.message ? `
+                                        <div class="bg-white dark:bg-gray-700 p-3 rounded-md col-span-2">
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">Message</div>
+                                            <div class="mt-1 text-gray-900 dark:text-gray-100">${container.message}</div>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
-                            <div class="resource-item" style="margin-top: 10px;">
-                                <strong>Image:</strong> ${container.image}
-                            </div>
-                            ${container.message ? `
-                                <div class="resource-item" style="margin-top: 10px;">
-                                    <strong>Message:</strong> ${container.message}
-                                </div>
-                            ` : ''}
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
             `;
-            
-            // Update modal content
+
             document.getElementById('modalContent').innerHTML = tabs + overviewContent + resourcesContent + containersContent;
-            
-            // Add tab click handlers
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    // Remove active class from all tabs and content
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding content
-                    this.classList.add('active');
-                    document.getElementById(this.dataset.tab).classList.add('active');
+
+            // Add tab switching functionality
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active classes
+                    tabBtns.forEach(b => {
+                        b.classList.remove('active', 'border-b-2', 'border-primary-500', 'text-primary-600', 'dark:text-primary-500');
+                        b.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    tabContents.forEach(content => content.classList.add('hidden'));
+
+                    // Add active classes
+                    btn.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    btn.classList.add('active', 'border-b-2', 'border-primary-500', 'text-primary-600', 'dark:text-primary-500');
+                    document.getElementById(btn.dataset.tab).classList.remove('hidden');
                 });
             });
-            
+
         }).fail(function() {
             document.getElementById('modalContent').innerHTML = `
-                <div class="modal-section" style="text-align: center; color: #721c24;">
-                    <i class="fas fa-exclamation-circle" style="font-size: 2em;"></i>
-                    <p>Error loading pod details. Please try again later.</p>
+                <div class="flex flex-col items-center justify-center p-8 text-red-500">
+                    <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
+                    <p class="text-center">Error loading pod details. Please try again later.</p>
                 </div>
             `;
         });
@@ -253,48 +639,48 @@ $(document).ready(function() {
     // Load health status
     $.get(`/api/health/${namespace}`, function(data) {
         const table = $('#healthTable table');
-        const tbody = table.find('tbody');
         const loading = $('#healthTable .loading');
+        const tbody = table.find('tbody');
+        tbody.empty();
         
         if (data.length === 0) {
             loading.html(`
-                <i class="fas fa-info-circle"></i>
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
                 <p>No pods found in namespace "${namespace}"</p>
             `);
             return;
         }
         
         data.forEach(function(item) {
-            const row = $('<tr></tr>');
-            const statusClass = item.status === 'Running' ? 'healthy' : 
-                              item.status === 'Pending' ? 'unknown' : 'unhealthy';
+            const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
+            const statusClass = item.status === 'Running' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 
+                              item.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
             
             const detailsBtn = $('<button></button>')
-                .addClass('pure-button')
+                .addClass('bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 py-2 px-4 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600')
                 .html('<i class="fas fa-info-circle"></i> Details')
                 .click(function() {
                     showPodDetails(item.name);
                 });
             
-            const actionsCell = $('<td></td>').append(detailsBtn);
-            
             row.append(
-                $('<td></td>').text(item.name),
-                $('<td></td>').html(`<span class="status ${statusClass}">${item.status}</span>`),
-                $('<td></td>').text(item.cpu),
-                $('<td></td>').text(item.memory),
-                $('<td></td>').text(item.restarts),
-                $('<td></td>').text(item.age),
-                actionsCell
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(item.name),
+                $('<td></td>').addClass('px-4 py-2').html(`<span class="px-2 py-1 rounded-md ${statusClass}">${item.status}</span>`),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(item.cpu),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(item.memory),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(item.restarts),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(item.age),
+                $('<td></td>').addClass('px-4 py-2').append(detailsBtn)
             );
+            
             tbody.append(row);
         });
         
         loading.hide();
-        table.show();
+        table.removeClass('hidden');
     }).fail(function() {
         $('#healthTable .loading').html(`
-            <i class="fas fa-exclamation-circle"></i>
+            <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
             <p>Error loading pod status. Please try again later.</p>
         `);
     });
@@ -302,69 +688,290 @@ $(document).ready(function() {
     // Load images
     $.get(`/api/images/${namespace}`, function(data) {
         const table = $('#imagesTable table');
-        const tbody = table.find('tbody');
         const loading = $('#imagesTable .loading');
+        const tbody = table.find('tbody');
+        tbody.empty();
         
         if (data.length === 0) {
             loading.html(`
-                <i class="fas fa-info-circle"></i>
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
                 <p>No images found in namespace "${namespace}"</p>
             `);
             return;
         }
         
         data.forEach(function(item) {
-            const row = $('<tr></tr>');
+            const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
             row.append(
-                $('<td></td>').text(item.pod_name || item.pod), 
-                $('<td></td>').text(item.image)
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(item.pod_name || item.pod_id || item.pod),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(item.image)
             );
             tbody.append(row);
         });
         
         loading.hide();
-        table.show();
+        table.removeClass('hidden');
     }).fail(function() {
         $('#imagesTable .loading').html(`
-            <i class="fas fa-exclamation-circle"></i>
+            <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
             <p>Error loading images. Please try again later.</p>
         `);
     });
     
-    // Load events
-    $.get(`/api/events/${namespace}`, function(data) {
-        const table = $('#eventsTable table');
+    // Load resource quotas
+    $.get(`/api/quotas/${namespace}`, function(data) {
+        const table = $('#quotasTable table');
+        const loading = $('#quotasTable .loading');
         const tbody = table.find('tbody');
-        const loading = $('#eventsTable .loading');
+        tbody.empty();
         
         if (data.length === 0) {
             loading.html(`
-                <i class="fas fa-info-circle"></i>
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                <p>No resource quotas found</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(quota) {
+            Object.entries(quota.status).forEach(function([resource, values]) {
+                const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
+                row.append(
+                    $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(resource),
+                    $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(values.used),
+                    $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(values.hard)
+                );
+                tbody.append(row);
+            });
+        });
+        
+        loading.hide();
+        table.removeClass('hidden');
+    });
+
+    // Load configmaps
+    $.get(`/api/configmaps/${namespace}`, function(data) {
+        const table = $('#configMapsTable table');
+        const loading = $('#configMapsTable .loading');
+        const tbody = table.find('tbody');
+        tbody.empty();
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                <p>No configmaps found</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(configmap) {
+            const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
+            row.append(
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(configmap.name),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(Object.keys(configmap.data || {}).length),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(configmap.age)
+            );
+            tbody.append(row);
+        });
+        
+        loading.hide();
+        table.removeClass('hidden');
+    });
+
+    // Load secrets
+    $.get(`/api/secrets/${namespace}`, function(data) {
+        const table = $('#secretsTable table');
+        const loading = $('#secretsTable .loading');
+        const tbody = table.find('tbody');
+        tbody.empty();
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                <p>No secrets found</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(secret) {
+            const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
+            row.append(
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(secret.name),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(secret.type),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(secret.age)
+            );
+            tbody.append(row);
+        });
+        
+        loading.hide();
+        table.removeClass('hidden');
+    });
+
+    // Load services
+    $.get(`/api/services/${namespace}`, function(data) {
+        const table = $('#servicesTable table');
+        const loading = $('#servicesTable .loading');
+        const tbody = table.find('tbody');
+        tbody.empty();
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                <p>No services found</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(service) {
+            const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
+            const ports = service.ports.map(p => `${p.port}${p.targetPort ? ':'+p.targetPort : ''} ${p.protocol}`).join(', ');
+            
+            row.append(
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(service.name),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(service.type),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(service.clusterIP),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(service.externalIP || '-'),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(ports),
+                $('<td></td>').addClass('px-4 py-2 text-sm text-gray-900 dark:text-gray-100').text(service.age)
+            );
+            tbody.append(row);
+        });
+        
+        loading.hide();
+        table.removeClass('hidden');
+    });
+
+    // Load ingresses
+    $.get(`/api/ingresses/${namespace}`, function(data) {
+        const container = $('#ingressesTable .grid');
+        const loading = $('#ingressesTable .loading');
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                <p>No ingresses found</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(ingress) {
+            const card = $('<div></div>').addClass('bg-gray-50 dark:bg-gray-700 rounded-lg p-4');
+            
+            // Header with name and class
+            const header = $('<div></div>').addClass('flex items-center justify-between mb-3');
+            header.append(
+                $('<div></div>').addClass('flex items-center gap-2').append(
+                    $('<span></span>').addClass('font-medium text-gray-900 dark:text-gray-100').text(ingress.name),
+                    $('<span></span>').addClass('px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100')
+                        .text(ingress.class)
+                ),
+                $('<span></span>').addClass('text-sm text-gray-500 dark:text-gray-400').text(ingress.age)
+            );
+            
+            // Rules section
+            const rulesSection = $('<div></div>').addClass('space-y-3 mt-3');
+            ingress.rules.forEach(function(rule) {
+                const ruleDiv = $('<div></div>').addClass('border-l-2 border-primary-500 pl-3');
+                
+                // Host
+                ruleDiv.append(
+                    $('<div></div>').addClass('text-sm font-medium text-gray-900 dark:text-gray-100 mb-1')
+                        .text(rule.host || '*')
+                );
+                
+                // Paths
+                const pathsList = $('<div></div>').addClass('space-y-1');
+                rule.paths.forEach(function(path) {
+                    const pathDiv = $('<div></div>').addClass('text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2');
+                    pathDiv.append(
+                        $('<span></span>').addClass('font-mono').text(path.path),
+                        $('<span></span>').addClass('text-gray-400 dark:text-gray-500').text('→'),
+                        $('<span></span>').text(`${path.service.name}:${path.service.port}`)
+                    );
+                    pathsList.append(pathDiv);
+                });
+                ruleDiv.append(pathsList);
+                rulesSection.append(ruleDiv);
+            });
+            
+            // TLS section if present
+            if (ingress.tls && ingress.tls.length > 0) {
+                const tlsSection = $('<div></div>').addClass('mt-3 pt-3 border-t border-gray-200 dark:border-gray-600');
+                tlsSection.append(
+                    $('<div></div>').addClass('text-sm font-medium text-gray-900 dark:text-gray-100 mb-2')
+                        .append($('<i></i>').addClass('fas fa-lock mr-2'))
+                        .append('TLS')
+                );
+                
+                ingress.tls.forEach(function(tls) {
+                    const tlsDiv = $('<div></div>').addClass('text-sm text-gray-600 dark:text-gray-300');
+                    tlsDiv.append(
+                        $('<div></div>').text(`Hosts: ${tls.hosts.join(', ')}`),
+                        $('<div></div>').text(`Secret: ${tls.secretName}`)
+                    );
+                    tlsSection.append(tlsDiv);
+                });
+                card.append(tlsSection);
+            }
+            
+            // Address if present
+            if (ingress.address) {
+                const addressSection = $('<div></div>').addClass('mt-3 pt-3 border-t border-gray-200 dark:border-gray-600');
+                addressSection.append(
+                    $('<div></div>').addClass('text-sm text-gray-600 dark:text-gray-300')
+                        .append($('<i></i>').addClass('fas fa-network-wired mr-2'))
+                        .append(`Address: ${ingress.address}`)
+                );
+                card.append(addressSection);
+            }
+            
+            card.append(header, rulesSection);
+            container.append(card);
+        });
+        
+        loading.hide();
+    }).fail(function() {
+        $('#ingressesTable .loading').html(`
+            <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+            <p>Error loading ingresses. Please try again later.</p>
+        `);
+    });
+
+    // Load events
+    $.get(`/api/events/${namespace}`, function(data) {
+        const table = $('#eventsTable table');
+        const loading = $('#eventsTable .loading');
+        const tbody = table.find('tbody');
+        tbody.empty();
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle text-2xl mb-2"></i>
                 <p>No events found in namespace "${namespace}"</p>
             `);
             return;
         }
         
         data.forEach(function(event) {
-            const row = $('<tr></tr>');
-            const typeClass = event.type === 'Normal' ? 'healthy' : 'unhealthy';
+            const row = $('<tr></tr>').addClass('hover:bg-gray-50 dark:hover:bg-gray-700');
+            const typeClass = event.type === 'Normal' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
             
             row.append(
-                $('<td></td>').html(`<span class="status ${typeClass}">${event.type}</span>`),
-                $('<td></td>').text(event.reason),
-                $('<td></td>').text(event.object),
-                $('<td></td>').text(event.message),
-                $('<td></td>').text(event.count),
-                $('<td></td>').text(event.last_seen)
+                $('<td></td>').addClass('px-4 py-2').html(`<span class="px-2 py-1 rounded-md ${typeClass}">${event.type}</span>`),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(event.reason),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(event.object),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(event.message),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(event.count),
+                $('<td></td>').addClass('px-4 py-2 text-gray-900 dark:text-gray-100').text(event.lastSeen)
             );
             tbody.append(row);
         });
         
         loading.hide();
-        table.show();
+        table.removeClass('hidden');
     }).fail(function() {
         $('#eventsTable .loading').html(`
-            <i class="fas fa-exclamation-circle"></i>
+            <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
             <p>Error loading events. Please try again later.</p>
         `);
     });
