@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from services.kubernetes import (
     get_namespaces, get_pods_in_namespace, get_pod_health,
     get_pod_images
@@ -6,33 +6,9 @@ from services.kubernetes import (
 
 web = Blueprint('web', __name__)
 
-@web.route('/', methods=['GET', 'POST'])
+@web.route('/', methods=['GET'])
 def index():
-    """Home page with namespace selection and pod list"""
-    namespaces = get_namespaces()
-    
-    if request.method == 'POST':
-        namespace = request.form.get('namespace')
-        pods = get_pods_in_namespace(namespace)
-        pod_list = []
-        
-        for pod in pods:
-            health = get_pod_health(pod)
-            images = get_pod_images(pod)
-            
-            pod_list.append({
-                'name': pod.metadata.name,
-                'health': health,
-                'image': images[0] if images else 'No image'
-            })
-        
-        return jsonify(pod_list)
-    
-    return render_template('index.html', namespaces=namespaces)
-
-@web.route('/dashboard')
-def dashboard():
-    """Main dashboard view"""
+    """Main dashboard/overview page"""
     namespaces = get_namespaces()
     return render_template('dashboard.html', namespaces=namespaces)
 
@@ -41,17 +17,18 @@ def images():
     """Image overview page"""
     return render_template('images.html')
 
+@web.route('/namespace/<namespace>')
+def namespace_view(namespace):
+    """Combined namespace view with health, images, and events"""
+    return render_template('namespace.html', namespace=namespace)
+
+# Redirect old routes to new namespace view
 @web.route('/images/<namespace>')
 def namespace_images(namespace):
-    """Namespace-specific image page"""
-    return render_template('pod.html', namespace=namespace)
-
-@web.route('/pod/<namespace>/<pod_name>')
-def pod_details(namespace, pod_name):
-    """Detailed pod view"""
-    return render_template('pod.html', namespace=namespace, pod_name=pod_name)
+    """Redirect to namespace view"""
+    return redirect(url_for('web.namespace_view', namespace=namespace))
 
 @web.route('/health/<namespace>')
 def health(namespace):
-    """Health status page"""
-    return render_template('health.html', namespace=namespace)
+    """Redirect to namespace view"""
+    return redirect(url_for('web.namespace_view', namespace=namespace))

@@ -1,82 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}Kubernetes Dashboard - Overview{% endblock %}
+{% block title %}Kubernetes Dashboard{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2><i class="fas fa-search"></i> Search Namespace</h2>
-    <form class="pure-form">
+    <h2><i class="fas fa-th-large"></i> Namespaces</h2>
+    
+    <div class="pure-form">
         <div class="search-box">
-            <input type="text" id="namespace-search" name="namespace" placeholder="Type to search namespaces..." autocomplete="off">
+            <input type="text" id="namespace-search" name="namespace" placeholder="Search namespaces..." autocomplete="off">
         </div>
-    </form>
-</div>
+    </div>
 
-<div class="card">
-    <h2><i class="fas fa-tachometer-alt"></i> Cluster Overview</h2>
-    <div class="health-summary">
-        <div class="health-stat healthy">
-            <i class="fas fa-check-circle"></i>
-            <span id="healthyCount">0</span>
-            <div class="health-stat-label">Healthy Pods</div>
-        </div>
-        <div class="health-stat unhealthy">
-            <i class="fas fa-exclamation-circle"></i>
-            <span id="unhealthyCount">0</span>
-            <div class="health-stat-label">Unhealthy Pods</div>
-        </div>
-        <div class="health-stat unknown">
-            <i class="fas fa-question-circle"></i>
-            <span id="unknownCount">0</span>
-            <div class="health-stat-label">Unknown Status</div>
-        </div>
-    </div>
-    
-    <div id="clusterTable" style="display: none;">
-        <div class="table-container">
-            <table class="pure-table pure-table-striped">
-                <thead>
-                    <tr>
-                        <th class="col-name">Pod Name</th>
-                        <th class="col-status">Status</th>
-                        <th class="col-image">Image</th>
-                        <th class="col-resource">CPU</th>
-                        <th class="col-resource">Memory</th>
-                        <th class="col-age">Age</th>
-                        <th class="col-restarts">Restarts</th>
-                        <th class="col-actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <div id="no-selection" class="loading">
-        <i class="fas fa-info-circle"></i>
-        <p>Select a namespace to view cluster information</p>
-    </div>
-</div>
-
-<div class="card" id="eventsCard" style="display: none;">
-    <h2><i class="fas fa-history"></i> Recent Events</h2>
-    <div class="events-table">
-        <div class="pure-table-wrapper">
-            <table class="pure-table pure-table-striped">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Reason</th>
-                        <th>Object</th>
-                        <th>Message</th>
-                        <th>Count</th>
-                        <th>Last Seen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+    <div id="namespaceGrid" class="namespace-grid">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading namespaces...</p>
         </div>
     </div>
 </div>
@@ -85,169 +28,116 @@
 {% block extra_scripts %}
 <script>
 $(document).ready(function() {
-    var namespaces = {{ namespaces|tojson|safe }};
-    
-    function updateHealthCounts(data) {
-        let healthy = 0, unhealthy = 0, unknown = 0;
-        data.forEach(pod => {
-            if (pod.health === 'healthy') healthy++;
-            else if (pod.health === 'unhealthy') unhealthy++;
-            else unknown++;
-        });
-        $('#healthyCount').text(healthy);
-        $('#unhealthyCount').text(unhealthy);
-        $('#unknownCount').text(unknown);
-    }
-    
-    function formatResourceValue(value) {
-        if (!value || value === '0') return 'N/A';
-        return value;
-    }
-    
-    function timeSince(dateStr) {
-        const date = new Date(dateStr);
-        const seconds = Math.floor((new Date() - date) / 1000);
-        
-        let interval = Math.floor(seconds / 31536000);
-        if (interval > 1) return interval + 'y';
-        interval = Math.floor(seconds / 2592000);
-        if (interval > 1) return interval + 'M';
-        interval = Math.floor(seconds / 86400);
-        if (interval > 1) return interval + 'd';
-        interval = Math.floor(seconds / 3600);
-        if (interval > 1) return interval + 'h';
-        interval = Math.floor(seconds / 60);
-        if (interval > 1) return interval + 'm';
-        return Math.floor(seconds) + 's';
-    }
-    
     function loadNamespaceData(namespace) {
-        $("#no-selection").hide();
-        $("#clusterTable").show();
-        $("#eventsCard").show();
+        return $.get(`/api/pods/${namespace}`).then(data => {
+            const stats = {
+                running: 0,
+                failed: 0,
+                pending: 0
+            };
+            
+            data.forEach(pod => {
+                if (pod.health === 'healthy') stats.running++;
+                else if (pod.health === 'unhealthy') stats.failed++;
+                else stats.pending++;
+            });
+            
+            return stats;
+        });
+    }
+    
+    function updateNamespaceCard(namespace, stats) {
+        return `
+            <div class="namespace-card">
+                <div class="namespace-header">
+                    <h3>${namespace}</h3>
+                    <div class="health-indicator">
+                        ${stats.running > 0 ? '<span class="health-dot healthy" title="Running pods"></span>' : ''}
+                        ${stats.failed > 0 ? '<span class="health-dot unhealthy" title="Failed pods"></span>' : ''}
+                        ${stats.pending > 0 ? '<span class="health-dot warning" title="Pending pods"></span>' : ''}
+                    </div>
+                </div>
+                <div class="namespace-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">${stats.running}</div>
+                        <div class="stat-label">Running</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${stats.failed + stats.pending}</div>
+                        <div class="stat-label">Issues</div>
+                    </div>
+                </div>
+                <a href="/namespace/${namespace}" class="view-details">
+                    <i class="fas fa-arrow-right"></i> View Details
+                </a>
+            </div>
+        `;
+    }
+    
+    // Load namespaces
+    $.get('/api/namespaces', function(namespaces) {
+        const grid = $('#namespaceGrid');
+        grid.empty();
         
-        // Show loading states
-        $("#clusterTable tbody").html(`
-            <tr>
-                <td colspan="8" class="loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading cluster information...</p>
-                </td>
-            </tr>
+        if (!Array.isArray(namespaces) || namespaces.length === 0) {
+            grid.html(`
+                <div class="loading">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No namespaces found</p>
+                </div>
+            `);
+            return;
+        }
+        
+        // Show loading state
+        grid.html(`
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading namespace information...</p>
+            </div>
         `);
         
-        // Fetch pod data
-        $.get(`/api/pods/${namespace}`, function(data) {
-            $("#clusterTable tbody").empty();
-            
-            if (data.length === 0) {
-                $("#clusterTable tbody").html(`
-                    <tr>
-                        <td colspan="8" class="loading">
-                            <i class="fas fa-info-circle"></i>
-                            <p>No pods found in namespace "${namespace}"</p>
-                        </td>
-                    </tr>
-                `);
-                updateHealthCounts([]);
-                return;
-            }
-            
-            updateHealthCounts(data);
-            
-            data.forEach(function(pod) {
-                $("#clusterTable tbody").append(`
-                    <tr>
-                        <td>${pod.name}</td>
-                        <td><span class="status ${pod.health}">${pod.health}</span></td>
-                        <td class="truncate" title="${pod.image}">${pod.image}</td>
-                        <td>
-                            <div class="resource-usage">
-                                <span title="Request">${formatResourceValue(pod.resources.cpu.request)}</span>
-                                <span class="separator">/</span>
-                                <span title="Limit">${formatResourceValue(pod.resources.cpu.limit)}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="resource-usage">
-                                <span title="Request">${formatResourceValue(pod.resources.memory.request)}</span>
-                                <span class="separator">/</span>
-                                <span title="Limit">${formatResourceValue(pod.resources.memory.limit)}</span>
-                            </div>
-                        </td>
-                        <td>${timeSince(pod.age)}</td>
-                        <td>${pod.restarts}</td>
-                        <td>
-                            <a href="/pod/${namespace}/${pod.name}" class="pure-button pure-button-small">
-                                <i class="fas fa-info-circle"></i> Details
-                            </a>
-                        </td>
-                    </tr>
-                `);
-            });
-        }).fail(function(jqXHR, textStatus, errorThrown) {
-            $("#clusterTable tbody").html(`
-                <tr>
-                    <td colspan="8" class="loading">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <p>Error loading cluster information. Please try again later.</p>
-                    </td>
-                </tr>
-            `);
-            updateHealthCounts([]);
-        });
+        // Load health data for each namespace
+        const promises = namespaces.map(ns => 
+            loadNamespaceData(ns).then(stats => ({
+                namespace: ns,
+                stats: stats
+            })).catch(() => ({
+                namespace: ns,
+                stats: { running: 0, failed: 0, pending: 0 }
+            }))
+        );
         
-        // Fetch events
-        $.get(`/api/events/${namespace}`, function(events) {
-            $(".events-table tbody").empty();
+        Promise.all(promises).then(results => {
+            const cardsHtml = results.map(result => 
+                updateNamespaceCard(result.namespace, result.stats)
+            ).join('');
             
-            if (events.length === 0) {
-                $(".events-table tbody").html(`
-                    <tr>
-                        <td colspan="6" class="loading">
-                            <i class="fas fa-info-circle"></i>
-                            <p>No events found in namespace "${namespace}"</p>
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
+            grid.html(cardsHtml);
             
-            events.forEach(function(event) {
-                const typeClass = event.type.toLowerCase();
-                $(".events-table tbody").append(`
-                    <tr>
-                        <td><span class="event-type ${typeClass}">${event.type}</span></td>
-                        <td>${event.reason}</td>
-                        <td class="truncate" title="${event.involved_object}">${event.involved_object}</td>
-                        <td class="truncate" title="${event.message}">${event.message}</td>
-                        <td>${event.count}</td>
-                        <td>${timeSince(event.last_timestamp)} ago</td>
-                    </tr>
-                `);
+            // Initialize search functionality
+            $('#namespace-search').on('input', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                $('.namespace-card').each(function() {
+                    const namespaceName = $(this).find('h3').text().toLowerCase();
+                    $(this).toggle(namespaceName.includes(searchTerm));
+                });
             });
-        }).fail(function(jqXHR, textStatus, errorThrown) {
-            $(".events-table tbody").html(`
-                <tr>
-                    <td colspan="6" class="loading">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <p>Error loading events. Please try again later.</p>
-                    </td>
-                </tr>
+        }).catch(() => {
+            grid.html(`
+                <div class="loading">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Error loading namespace information. Please try again later.</p>
+                </div>
             `);
         });
-    }
-    
-    $("#namespace-search").autocomplete({
-        source: namespaces,
-        minLength: 0,
-        select: function(event, ui) {
-            if (ui.item) {
-                loadNamespaceData(ui.item.value);
-            }
-        }
-    }).focus(function() {
-        $(this).autocomplete("search", "");
+    }).fail(function() {
+        $('#namespaceGrid').html(`
+            <div class="loading">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Error loading namespaces. Please try again later.</p>
+            </div>
+        `);
     });
 });
 </script>

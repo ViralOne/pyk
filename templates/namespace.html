@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Kubernetes Dashboard - {{ namespace }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/namespace.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>
+        <i class="fas fa-cube"></i> 
+        Namespace: <span class="status healthy">{{ namespace }}</span>
+    </h2>
+</div>
+
+<div class="card">
+    <h2>
+        <i class="fas fa-heart"></i> 
+        Pod Status
+    </h2>
+    <div id="healthTable">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading pod status...</p>
+        </div>
+        <table class="pure-table pure-table-striped" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Pod Name</th>
+                    <th>Status</th>
+                    <th>CPU</th>
+                    <th>Memory</th>
+                    <th>Restarts</th>
+                    <th>Age</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2>
+        <i class="fas fa-box"></i> 
+        Docker Images
+    </h2>
+    <div id="imagesTable">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading images...</p>
+        </div>
+        <table class="pure-table pure-table-striped" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Pod Name</th>
+                    <th>Image</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-history"></i> Recent Events</h2>
+    <div id="eventsTable">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading events...</p>
+        </div>
+        <table class="pure-table pure-table-striped" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Reason</th>
+                    <th>Object</th>
+                    <th>Message</th>
+                    <th>Count</th>
+                    <th>Last Seen</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pod Details Modal -->
+<div id="podDetailsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div class="modal-header">
+            <h2><i class="fas fa-cube"></i> <span id="modalPodName"></span></h2>
+        </div>
+        <div id="modalContent">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading pod details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    const namespace = '{{ namespace }}';
+    const modal = document.getElementById('podDetailsModal');
+    const closeBtn = document.getElementsByClassName('close-modal')[0];
+    
+    // Close modal when clicking the close button or outside the modal
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+    
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+    
+    function showPodDetails(podName) {
+        // Show modal and loading spinner
+        modal.style.display = "block";
+        document.getElementById('modalPodName').textContent = podName;
+        document.getElementById('modalContent').innerHTML = `
+            <div class="loading-spinner" style="display: block;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading pod details...</p>
+            </div>
+        `;
+        
+        // Get detailed pod information
+        $.get(`/api/pods/${namespace}/${podName}`, function(data) {
+            // Create tabs
+            const tabs = `
+                <div class="tabs">
+                    <button class="tab active" data-tab="overview">
+                        <i class="fas fa-info-circle"></i> Overview
+                    </button>
+                    <button class="tab" data-tab="resources">
+                        <i class="fas fa-microchip"></i> Resources
+                    </button>
+                    <button class="tab" data-tab="containers">
+                        <i class="fas fa-box"></i> Containers
+                    </button>
+                </div>
+            `;
+            
+            // Overview tab content
+            const overviewContent = `
+                <div id="overview" class="tab-content active">
+                    <div class="resource-grid">
+                        <div class="resource-item">
+                            <strong>Status:</strong> 
+                            <span class="status-badge ${data.status.toLowerCase()}">${data.status}</span>
+                        </div>
+                        <div class="resource-item">
+                            <strong>Created:</strong> ${data.created}
+                        </div>
+                        <div class="resource-item">
+                            <strong>Node:</strong> ${data.node}
+                        </div>
+                        <div class="resource-item">
+                            <strong>IP:</strong> ${data.ip}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Resources tab content
+            const resourcesContent = `
+                <div id="resources" class="tab-content">
+                    <div class="resource-grid">
+                        <div class="resource-item">
+                            <strong>CPU Request:</strong> ${data.resources.cpu.request}
+                        </div>
+                        <div class="resource-item">
+                            <strong>CPU Limit:</strong> ${data.resources.cpu.limit}
+                        </div>
+                        <div class="resource-item">
+                            <strong>Memory Request:</strong> ${data.resources.memory.request}
+                        </div>
+                        <div class="resource-item">
+                            <strong>Memory Limit:</strong> ${data.resources.memory.limit}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Containers tab content
+            const containersContent = `
+                <div id="containers" class="tab-content">
+                    ${data.containers.map(container => `
+                        <div class="container-status">
+                            <h4>${container.name}</h4>
+                            <div class="resource-grid">
+                                <div class="resource-item">
+                                    <strong>Status:</strong> 
+                                    <span class="status-badge ${container.state.toLowerCase()}">${container.state}</span>
+                                </div>
+                                <div class="resource-item">
+                                    <strong>Ready:</strong> ${container.ready ? 'Yes' : 'No'}
+                                </div>
+                                <div class="resource-item">
+                                    <strong>Restarts:</strong> ${container.restarts}
+                                </div>
+                            </div>
+                            <div class="resource-item" style="margin-top: 10px;">
+                                <strong>Image:</strong> ${container.image}
+                            </div>
+                            ${container.message ? `
+                                <div class="resource-item" style="margin-top: 10px;">
+                                    <strong>Message:</strong> ${container.message}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Update modal content
+            document.getElementById('modalContent').innerHTML = tabs + overviewContent + resourcesContent + containersContent;
+            
+            // Add tab click handlers
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and content
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab).classList.add('active');
+                });
+            });
+            
+        }).fail(function() {
+            document.getElementById('modalContent').innerHTML = `
+                <div class="modal-section" style="text-align: center; color: #721c24;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 2em;"></i>
+                    <p>Error loading pod details. Please try again later.</p>
+                </div>
+            `;
+        });
+    }
+    
+    // Load health status
+    $.get(`/api/health/${namespace}`, function(data) {
+        const table = $('#healthTable table');
+        const tbody = table.find('tbody');
+        const loading = $('#healthTable .loading');
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle"></i>
+                <p>No pods found in namespace "${namespace}"</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(item) {
+            const row = $('<tr></tr>');
+            const statusClass = item.status === 'Running' ? 'healthy' : 
+                              item.status === 'Pending' ? 'unknown' : 'unhealthy';
+            
+            const detailsBtn = $('<button></button>')
+                .addClass('pure-button')
+                .html('<i class="fas fa-info-circle"></i> Details')
+                .click(function() {
+                    showPodDetails(item.name);
+                });
+            
+            const actionsCell = $('<td></td>').append(detailsBtn);
+            
+            row.append(
+                $('<td></td>').text(item.name),
+                $('<td></td>').html(`<span class="status ${statusClass}">${item.status}</span>`),
+                $('<td></td>').text(item.cpu),
+                $('<td></td>').text(item.memory),
+                $('<td></td>').text(item.restarts),
+                $('<td></td>').text(item.age),
+                actionsCell
+            );
+            tbody.append(row);
+        });
+        
+        loading.hide();
+        table.show();
+    }).fail(function() {
+        $('#healthTable .loading').html(`
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading pod status. Please try again later.</p>
+        `);
+    });
+    
+    // Load images
+    $.get(`/api/images/${namespace}`, function(data) {
+        const table = $('#imagesTable table');
+        const tbody = table.find('tbody');
+        const loading = $('#imagesTable .loading');
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle"></i>
+                <p>No images found in namespace "${namespace}"</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(item) {
+            const row = $('<tr></tr>');
+            row.append(
+                $('<td></td>').text(item.pod_name || item.pod), 
+                $('<td></td>').text(item.image)
+            );
+            tbody.append(row);
+        });
+        
+        loading.hide();
+        table.show();
+    }).fail(function() {
+        $('#imagesTable .loading').html(`
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading images. Please try again later.</p>
+        `);
+    });
+    
+    // Load events
+    $.get(`/api/events/${namespace}`, function(data) {
+        const table = $('#eventsTable table');
+        const tbody = table.find('tbody');
+        const loading = $('#eventsTable .loading');
+        
+        if (data.length === 0) {
+            loading.html(`
+                <i class="fas fa-info-circle"></i>
+                <p>No events found in namespace "${namespace}"</p>
+            `);
+            return;
+        }
+        
+        data.forEach(function(event) {
+            const row = $('<tr></tr>');
+            const typeClass = event.type === 'Normal' ? 'healthy' : 'unhealthy';
+            
+            row.append(
+                $('<td></td>').html(`<span class="status ${typeClass}">${event.type}</span>`),
+                $('<td></td>').text(event.reason),
+                $('<td></td>').text(event.object),
+                $('<td></td>').text(event.message),
+                $('<td></td>').text(event.count),
+                $('<td></td>').text(event.last_seen)
+            );
+            tbody.append(row);
+        });
+        
+        loading.hide();
+        table.show();
+    }).fail(function() {
+        $('#eventsTable .loading').html(`
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading events. Please try again later.</p>
+        `);
+    });
+});
+</script>
+{% endblock %}

@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Kubernetes Dashboard - All Images{% endblock %}
+{% block title %}Kubernetes Dashboard - Images{% endblock %}
 
 {% block content %}
 <div class="card">
     <h2><i class="fas fa-box"></i> Docker Images</h2>
-    <div class="search-box">
-        <input type="text" id="imageSearch" placeholder="Search pods or images..." autocomplete="off">
-        <div class="search-stats">
-            Showing <span id="visibleCount">0</span> of <span id="totalCount">0</span> pods
+    
+    <div class="pure-form">
+        <div class="search-box">
+            <input type="text" id="filterInput" name="namespace" placeholder="Filter images..." autocomplete="off">
         </div>
     </div>
+
+
     <div id="imagesTable">
         <div class="loading">
             <i class="fas fa-spinner fa-spin"></i>
@@ -34,35 +36,7 @@
 {% block extra_scripts %}
 <script>
 $(document).ready(function() {
-    let allData = [];
-    
-    function filterTable(searchTerm) {
-        const tbody = $('#imagesTable tbody');
-        const lowercaseSearch = searchTerm.toLowerCase();
-        let visibleCount = 0;
-        
-        tbody.empty();
-        allData.forEach(function(item) {
-            if (
-                item.namespace.toLowerCase().includes(lowercaseSearch) ||
-                item.pod_name.toLowerCase().includes(lowercaseSearch) ||
-                item.image.toLowerCase().includes(lowercaseSearch)
-            ) {
-                visibleCount++;
-                const row = $('<tr></tr>');
-                const namespaceCell = $('<td></td>').text(item.namespace);
-                const podNameCell = $('<td></td>').text(item.pod_name);
-                const imageCell = $('<td></td>').text(item.image);
-                tbody.append(row);
-                row.append(namespaceCell, podNameCell, imageCell);
-            }
-        });
-        
-        // Update stats
-        $('#visibleCount').text(visibleCount);
-    }
-    
-    // Fetch data from API
+    // Load images
     $.get('/api/images', function(data) {
         const table = $('#imagesTable table');
         const tbody = table.find('tbody');
@@ -71,35 +45,48 @@ $(document).ready(function() {
         if (data.length === 0) {
             loading.html(`
                 <i class="fas fa-info-circle"></i>
-                <p>No pods found in any namespace</p>
+                <p>No images found</p>
             `);
             return;
         }
         
-        allData = data;
-        $('#totalCount').text(data.length);
+        data.forEach(function(item) {
+            const row = $('<tr></tr>');
+            const namespaceLink = $('<a></a>')
+                .attr('href', `/namespace/${item.namespace}`)
+                .text(item.namespace)
+                .css({
+                    'color': '#3498db',
+                    'text-decoration': 'none'
+                })
+                .hover(
+                    function() { $(this).css('text-decoration', 'underline'); },
+                    function() { $(this).css('text-decoration', 'none'); }
+                );
+            
+            row.append(
+                $('<td></td>').append(namespaceLink),
+                $('<td></td>').text(item.pod_name),
+                $('<td></td>').text(item.image)
+            );
+            tbody.append(row);
+        });
         
-        // Initial unfiltered view
-        filterTable('');
-        
-        // Hide loading, show table
         loading.hide();
         table.show();
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-        loading.html(`
+    }).fail(function() {
+        $('#imagesTable .loading').html(`
             <i class="fas fa-exclamation-circle"></i>
             <p>Error loading images. Please try again later.</p>
         `);
     });
     
-    // Search handler with debounce
-    let searchTimeout;
-    $('#imageSearch').on('input', function() {
-        const searchTerm = $(this).val();
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(function() {
-            filterTable(searchTerm);
-        }, 300);
+    // Filter functionality
+    $('#filterInput').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        $('#imagesTable tbody tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
     });
 });
 </script>
