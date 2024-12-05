@@ -1,84 +1,139 @@
-<html>
-  <head>
-  <style>
-    body {
-      text-align: center;
-    }
-    form, table {
-      display: inline-block;
-    }
-  </style>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
-  <script src="https://unpkg.com/jquery@3.6.0/dist/jquery.min.js"></script>
-  <script>
-    $(document).ready(function() {
-      $('#namespace').change(function() {
-        const namespace = $(this).val();
-        $.ajax({
-          url: '/pods/' + namespace,
-          success: function(data) {
-            $('#pod-select').html(data);
-          },
-        });
-      });
-    });
-  </script>
-  </head>
-  <body>
-    <form class="pure-form" method="post">
-      <fieldset>
-          <legend>Namespace</legend>
-          <select id="namespace" name="namespace" onchange="submitForm()">
-            {% for namespace in namespaces %}
-              <option value="{{ namespace }}">{{ namespace }}</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="pure-button pure-button-primary">Submit</button>
-      </fieldset>
-  </form>
-    <br>
-    <h2>Pods and Docker Images</h2>
-    <table class="pure-table">
-      <thead>
-        <tr>
-          <th>Pod Name</th>
-          <th>Docker Image</th>
-        </tr>
-        </thead>
-      <tbody>
-        {% for i in range(pods|length) %}
-        <tr>
-          <td>{{ pods[i].metadata.name }}</td>
-          <td>{{ pod_images[i] }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-    
-    <br>
+{% extends "base.html" %}
 
-    <h1>Implemented Paths</h1>
-    <table class="pure-table">
-      <thead>
-        <tr>
-          <th>Service name</th>
-          <th>Path</th>
-        </tr>
-      </thead>
-      <tbody>
-      <tr>
-        <td>Pod Health</td>
-        <td>/health/< NAMESPACE ></td>
-      </tr>
-      <tr>
-        <td>Docker Images</td>
-        <td>/images</td>
-      </tr>
-      <tr>
-        <td>Docker Images by Namespace</td>
-        <td>/images/< NAMESPACE ></td>
-      </tr>
-      </tbody>
+{% block title %}Kubernetes Dashboard - Home{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2><i class="fas fa-search"></i> Search Namespace</h2>
+    <form class="pure-form">
+        <div class="search-box">
+            <input type="text" id="namespace-search" name="namespace" placeholder="Type to search namespaces..." autocomplete="off">
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-cube"></i> Pods</h2>
+    <div id="podTable" style="display: none;">
+        <div class="pure-table-wrapper">
+            <table class="pure-table pure-table-striped">
+                <thead>
+                    <tr>
+                        <th>Pod Name</th>
+                        <th>Status</th>
+                        <th>Image Tag</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="no-selection" class="loading">
+        <i class="fas fa-info-circle"></i>
+        <p>Select a namespace to view pods</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-map"></i> Available Endpoints</h2>
+    <table class="pure-table pure-table-striped">
+        <thead>
+            <tr>
+                <th>Service Name</th>
+                <th>Path</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Pod Health</td>
+                <td>/health/< NAMESPACE ></td>
+                <td><span class="status healthy">UI</span></td>
+            </tr>
+            <tr>
+                <td>Pod Health API</td>
+                <td>/api/health/< NAMESPACE ></td>
+                <td><span class="status unknown">JSON API</span></td>
+            </tr>
+            <tr>
+                <td>Docker Images</td>
+                <td>/images</td>
+                <td><span class="status healthy">UI</span></td>
+            </tr>
+            <tr>
+                <td>Docker Images API</td>
+                <td>/api/images</td>
+                <td><span class="status unknown">JSON API</span></td>
+            </tr>
+            <tr>
+                <td>Docker Images by Namespace</td>
+                <td>/images/< NAMESPACE ></td>
+                <td><span class="status healthy">UI</span></td>
+            </tr>
+            <tr>
+                <td>Docker Images by Namespace API</td>
+                <td>/api/images/< NAMESPACE ></td>
+                <td><span class="status unknown">JSON API</span></td>
+            </tr>
+        </tbody>
     </table>
-  </body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    var namespaces = {{ namespaces|tojson|safe }};
+    
+    function loadNamespacePods(namespace) {
+        $("#no-selection").hide();
+        $("#podTable").show();
+        
+        // Show loading state
+        $("#podTable tbody").html(`
+            <tr>
+                <td colspan="4" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading pods...</p>
+                </td>
+            </tr>
+        `);
+        
+        // Post to get pod data
+        $.post('/', { namespace: namespace }, function(data) {
+            $("#podTable tbody").empty();
+            
+            data.forEach(function(pod) {
+                const imageTag = pod.image.includes(':') ? pod.image.split(':')[1] : pod.image;
+                $("#podTable tbody").append(`
+                    <tr>
+                        <td>${pod.name}</td>
+                        <td><span class="status ${pod.health}">${pod.health}</span></td>
+                        <td class="truncate" title="${pod.image}">${imageTag}</td>
+                        <td>
+                            <a href="/pod/${namespace}/${pod.name}" class="pure-button pure-button-small">
+                                <i class="fas fa-info-circle"></i> Details
+                            </a>
+                        </td>
+                    </tr>
+                `);
+            });
+        });
+    }
+    
+    $("#namespace-search").autocomplete({
+        source: namespaces,
+        minLength: 0,
+        select: function(event, ui) {
+            if (ui.item) {
+                loadNamespacePods(ui.item.value);
+            }
+        }
+    }).focus(function() {
+        $(this).autocomplete("search", "");
+    });
+});
+</script>
+{% endblock %}

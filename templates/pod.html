@@ -1,31 +1,68 @@
-<html>
-  <head>
-    <style>
-      table {
-        border-collapse: collapse;
-      }
-      th, td {
-        border: 1px solid black;
-        padding: 8px;
-      }
-      tr:nth-child(even) {
-        background-color: #dddddd;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Docker Images in "{{ namespace }}" namespace</h1>
-    <table>
-      <tr>
-        <th>Pod Name</th>
-        <th>Image</th>
-      </tr>
-      {% for image in images %}
-      <tr>
-        <td>{{ image.pod_name }}</td>
-        <td>{{ image.image }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Kubernetes Dashboard - {{ namespace }} Images{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>
+        <i class="fas fa-box"></i> 
+        Docker Images in <span class="status healthy">{{ namespace }}</span> namespace
+    </h2>
+    <div id="imagesTable">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading images...</p>
+        </div>
+        <table class="pure-table pure-table-striped" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Pod Name</th>
+                    <th>Image</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-link"></i> Quick Links</h2>
+    <p>
+        <a href="/health/{{ namespace }}" class="pure-button">
+            <i class="fas fa-heart"></i> View Health Status
+        </a>
+        <a href="/images" class="pure-button">
+            <i class="fas fa-th-list"></i> View All Images
+        </a>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    const namespace = '{{ namespace }}';
+    // Fetch data from API
+    $.get(`/api/images/${namespace}`, function(data) {
+        const table = $('#imagesTable table');
+        const tbody = table.find('tbody');
+        const loading = $('#imagesTable .loading');
+        
+        // Add new rows
+        data.forEach(function(item) {
+            tbody.append(`
+                <tr>
+                    <td>${item.pod_name}</td>
+                    <td>${item.image}</td>
+                </tr>
+            `);
+        });
+        
+        // Hide loading, show table
+        loading.hide();
+        table.show();
+    });
+});
+</script>
+{% endblock %}

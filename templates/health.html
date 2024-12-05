@@ -1,31 +1,68 @@
-<html>
-  <head>
-    <style>
-      table {
-        border-collapse: collapse;
-      }
-      th, td {
-        border: 1px solid black;
-        padding: 8px;
-      }
-      tr:nth-child(even) {
-        background-color: #dddddd;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Pods in namespace "{{ namespace }}"</h1>
-    <table id="podTable">
-      <tr>
-        <th>Pod Name</th>
-        <th>Health Status</th>
-      </tr>
-      {% for pod in pod_info %}
-      <tr>
-        <td>{{ pod.name }}</td>
-        <td>{{ pod.health }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Kubernetes Dashboard - {{ namespace }} Health{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>
+        <i class="fas fa-heart"></i> 
+        Pod Health in <span class="status healthy">{{ namespace }}</span> namespace
+    </h2>
+    <div id="healthTable">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading health status...</p>
+        </div>
+        <table class="pure-table pure-table-striped" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Pod Name</th>
+                    <th>Health Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-link"></i> Quick Links</h2>
+    <p>
+        <a href="/images/{{ namespace }}" class="pure-button">
+            <i class="fas fa-box"></i> View Images
+        </a>
+        <a href="/images" class="pure-button">
+            <i class="fas fa-th-list"></i> View All Images
+        </a>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    const namespace = '{{ namespace }}';
+    // Fetch data from API
+    $.get(`/api/health/${namespace}`, function(data) {
+        const table = $('#healthTable table');
+        const tbody = table.find('tbody');
+        const loading = $('#healthTable .loading');
+        
+        // Add new rows
+        data.forEach(function(pod) {
+            tbody.append(`
+                <tr>
+                    <td>${pod.name}</td>
+                    <td><span class="status ${pod.health}">${pod.health}</span></td>
+                </tr>
+            `);
+        });
+        
+        // Hide loading, show table
+        loading.hide();
+        table.show();
+    });
+});
+</script>
+{% endblock %}
