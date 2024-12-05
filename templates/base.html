@@ -6,7 +6,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
+        <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -30,10 +30,20 @@
                 <i class="fas fa-cubes"></i> Kubernetes Dashboard
             </h1>
             <div class="flex items-center gap-4">
-                <button id="themeSwitch" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button id="themeSwitch" 
+                        aria-label="Toggle dark mode"
+                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i class="fas fa-moon dark:hidden"></i>
                     <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
                 </button>
+                <div class="context-selector flex items-center space-x-2">
+                    <label for="k8s-context" class="text-sm font-medium text-gray-700 dark:text-gray-300">Context:</label>
+                    <select id="k8s-context" onchange="changeContext()" class="pl-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-primary-200">
+                        {% for context in contexts %}
+                        <option value="{{ context }}">{{ context }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -59,7 +69,7 @@
                         <i class="fas fa-server"></i> Nodes
                     </h3>
                 </div>
-                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ node_count }}</div>
+                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ node_count|default(0) }}</div>
                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div class="bg-primary rounded-full h-2" style="width: {{ node_usage }}%"></div>
                 </div>
@@ -72,7 +82,7 @@
                         <i class="fas fa-cubes"></i> Pods
                     </h3>
                 </div>
-                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ pod_count }}</div>
+                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ pod_count|default(0) }}</div>
                 {% if pod_growth > 0 %}
                 <div class="text-success text-sm">
                     <i class="fas fa-arrow-up"></i> {{ pod_growth }}% from last hour
@@ -94,7 +104,7 @@
                         <i class="fas fa-microchip"></i> CPU Usage
                     </h3>
                 </div>
-                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ used_cpu }}/{{ total_cpu }} cores</div>
+                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ used_cpu|default(0)|round(1) }}/{{ total_cpu|default(0)|round(1) }} cores</div>
                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div class="bg-primary rounded-full h-2" style="width: {{ cpu_usage }}%"></div>
                 </div>
@@ -107,7 +117,7 @@
                         <i class="fas fa-memory"></i> Memory Usage
                     </h3>
                 </div>
-                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ used_memory }}/{{ total_memory }} GB</div>
+                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ used_memory|default(0)|filesizeformat }}/{{ total_memory|default(0)|filesizeformat }} GB</div>
                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div class="bg-primary rounded-full h-2" style="width: {{ memory_usage }}%"></div>
                 </div>
@@ -139,6 +149,39 @@
                 }
             });
         });
+        document.addEventListener('DOMContentLoaded', function() {
+        fetchContexts();
+    });
+
+    function fetchContexts() {
+        fetch('/api/get-contexts')
+            .then(response => response.json())
+            .then(data => {
+                const contextSelect = document.getElementById('k8s-context');
+                contextSelect.innerHTML = ''; // Clear existing options
+                data.contexts.forEach(context => {
+                    const option = document.createElement('option');
+                    option.value = context;
+                    option.textContent = context;
+                    contextSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching contexts:', error));
+    }
+
+    function changeContext() {
+        const selectedContext = document.getElementById('k8s-context').value;
+        fetch(`/api/set-context/${selectedContext}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to change context');
+                }
+            })
+            .catch(error => console.error('Error changing context:', error));
+    }        
     </script>
 </body>
 </html>

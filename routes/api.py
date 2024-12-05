@@ -1,6 +1,6 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from functools import wraps
-from kubernetes import client
+from kubernetes import client, config
 from services.kubernetes import (
     get_pods_in_namespace, get_pod_health, get_pod_resources,
     get_pod_images, get_pod_restart_count, get_namespace_events,
@@ -404,7 +404,6 @@ def debug_resource(resource_type, namespace, name):
         elif resource_type == 'service':
             resource = v1.read_namespaced_service(name, namespace)
             resource_details = {
-                'type': 'Service',
                 'name': resource.metadata.name,
                 'type': resource.spec.type,
                 'cluster_ip': resource.spec.cluster_ip,
@@ -461,11 +460,11 @@ def debug_resource(resource_type, namespace, name):
                                 'status': 'Active',
                                 'info': f'Targeted via {rule.host}{path.path}'
                             })
-                        except:
+                        except client.rest.ApiException as e:
                             related_resources['Services'].append({
                                 'name': service_name,
                                 'status': 'Error',
-                                'info': 'Service not found'
+                                'info': f'Service not found: {str(e)}'
                             })
             
             # Find TLS secrets
@@ -479,11 +478,11 @@ def debug_resource(resource_type, namespace, name):
                             'status': 'Active',
                             'info': f'TLS Secret for {", ".join(tls.hosts)}'
                         })
-                    except:
+                    except client.rest.ApiException as e:
                         related_resources['Secrets'].append({
                             'name': tls.secret_name,
                             'status': 'Error',
-                            'info': 'Secret not found'
+                            'info': f'Secret not found: {str(e)}'
                         })
         
         # Get events for the resource
@@ -510,3 +509,17 @@ def debug_resource(resource_type, namespace, name):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@api.route('/get-contexts')
+def get_contexts():
+    """Get list of available Kubernetes contexts"""
+    contexts, _ = config.list_kube_config_contexts()
+    return jsonify({'contexts': [context['name'] for context in contexts]})
+
+@api.route('/set-context/<context_name>', methods=['POST'])
+def set_context(context_name):
+    try:
+        config.load_kube_config(context=context_name)
+        return jsonify({'success': True})
+    except config.ConfigException as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
