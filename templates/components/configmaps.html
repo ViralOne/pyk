@@ -1,0 +1,25 @@
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+        <i class="fas fa-cogs"></i> 
+        ConfigMaps
+    </h2>
+    <div id="configMapsTable">
+        <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Loading configmaps...</p>
+        </div>
+        <div class="max-h-[400px] overflow-y-auto">
+            <table class="w-full hidden">
+                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Name</th>
+                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Keys</th>
+                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Age</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

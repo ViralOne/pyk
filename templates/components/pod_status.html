@@ -1,0 +1,27 @@
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+        <i class="fas fa-heart"></i> 
+        Pod Status
+    </h2>
+    <div id="healthTable">
+        <div class="loading flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Loading pod status...</p>
+        </div>
+        <table class="w-full hidden">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Pod Name</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Status</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">CPU</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Memory</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Restarts</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Age</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-300">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+            </tbody>
+        </table>
+    </div>
+</div>

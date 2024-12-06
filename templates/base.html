@@ -117,7 +117,7 @@
                         <i class="fas fa-memory"></i> Memory Usage
                     </h3>
                 </div>
-                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ used_memory|default(0)|filesizeformat }}/{{ total_memory|default(0)|filesizeformat }} GB</div>
+                <div class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{{ used_memory }}/{{ total_memory }} GB</div>
                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div class="bg-primary rounded-full h-2" style="width: {{ memory_usage }}%"></div>
                 </div>
