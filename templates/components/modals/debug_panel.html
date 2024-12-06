@@ -1,0 +1,65 @@
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css" />
+<div id="debugPanel" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl mx-auto mt-20 h-[80vh] overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <i class="fas fa-bug"></i> Debug View
+            </h3>
+            <button onclick="closeDebugPanel()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-hidden">
+            <div class="flex h-full">
+                <!-- Resource Details -->
+                <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+                    <div class="p-2 bg-gray-50 dark:bg-gray-900">
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Details</h4>
+                    </div>
+                    <div id="debugResourceDetails" class="p-4 space-y-4 overflow-y-auto flex-1">
+                        <div class="animate-pulse">
+                            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Related Resources -->
+                <div class="flex-1 overflow-hidden flex flex-col">
+                    <div class="border-b border-gray-200 dark:border-gray-700">
+                        <nav class="flex space-x-4 px-4" aria-label="Tabs">
+                            <button onclick="switchDebugTab('graph')" 
+                                    class="debug-tab active px-3 py-2 text-sm font-medium rounded-md bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white" 
+                                    data-tab="graph">
+                                <i class="fas fa-project-diagram mr-2"></i>Service Graph
+                            </button>
+                            <button onclick="switchDebugTab('resources')" 
+                                    class="debug-tab px-3 py-2 text-sm font-medium rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800" 
+                                    data-tab="resources">
+                                <i class="fas fa-cubes mr-2"></i>Related Resources
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <!-- Tab Panels -->
+                    <div class="flex-1 overflow-hidden">
+                        <!-- Graph Tab -->
+                        <div id="graphTab" class="debug-tab-panel active h-full">
+                            <div id="serviceGraph" class="bg-gray-500 w-full h-full"></div>
+                        </div>
+                        
+                        <!-- Resources Tab -->
+                        <div id="resourcesTab" class="debug-tab-panel hidden h-full overflow-y-auto p-4">
+                            <div id="debugRelatedResources" class="space-y-4">
+                                <div class="animate-pulse">
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

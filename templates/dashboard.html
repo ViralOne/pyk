@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Kubernetes Dashboard{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-semibold flex items-center gap-2 mb-6 text-gray-900 dark:text-white">
+        <i class="fas fa-th-large"></i> Namespaces
+    </h2>
+    
+    <div class="mb-6">
+        <div class="relative">
+            <input type="text" 
+                   id="namespace-search" 
+                   name="namespace" 
+                   placeholder="Search namespaces..." 
+                   autocomplete="off"
+                   class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <i class="fas fa-search text-gray-400 dark:text-gray-500"></i>
+            </div>
+        </div>
+    </div>
+
+    <div id="namespaceGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Loading namespaces...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    function loadNamespaceData(namespace) {
+        return $.get(`/api/pods/${namespace}`).then(data => {
+            const stats = {
+                running: 0,
+                failed: 0,
+                pending: 0
+            };
+            
+            data.forEach(pod => {
+                const health = pod.health || 'unknown';
+                switch (health) {
+                    case 'healthy':
+                        stats.running++;
+                        break;
+                    case 'unhealthy':
+                        stats.failed++;
+                        break;
+                    case 'unknown':
+                        console.warn(`Unknown health status for pod: ${pod.name}`);
+                        // fallthrough
+                    default:
+                        stats.pending++;
+                }
+            });
+            
+            return stats;
+        });
+    }
+    
+    function updateNamespaceCard(namespace, stats) {
+        return `
+            <div class="bg-white dark:bg-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">${namespace}</h3>
+                    <div class="flex gap-2">
+                        ${stats.running > 0 ? '<span class="w-2 h-2 rounded-full bg-green-500" title="Running pods"></span>' : ''}
+                        ${stats.failed > 0 ? '<span class="w-2 h-2 rounded-full bg-red-500" title="Failed pods"></span>' : ''}
+                        ${stats.pending > 0 ? '<span class="w-2 h-2 rounded-full bg-yellow-500" title="Pending pods"></span>' : ''}
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+                        <div class="text-2xl font-semibold text-green-600 dark:text-green-500">${stats.running}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Running</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+                        <div class="text-2xl font-semibold ${(stats.failed + stats.pending) > 0 ? 'text-red-600 dark:text-red-500' : 'text-gray-600 dark:text-gray-400'}">${stats.failed + stats.pending}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Issues</div>
+                    </div>
+                </div>
+                <a href="/namespace/${namespace}" class="inline-flex items-center justify-center w-full px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200">
+                    View Details <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        `;
+    }
+    
+    // Load namespaces
+    $.get('/api/namespaces', function(namespaces) {
+        const grid = $('#namespaceGrid');
+        grid.empty();
+        
+        if (!Array.isArray(namespaces) || namespaces.length === 0) {
+            grid.html(`
+                <div class="col-span-full flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle text-2xl mb-2"></i>
+                    <p>No namespaces found</p>
+                </div>
+            `);
+            return;
+        }
+        
+        // Show loading state
+        grid.html(`
+            <div class="col-span-full flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <p>Loading namespace information...</p>
+            </div>
+        `);
+        
+        // Load health data for each namespace
+        const promises = namespaces.map(ns => 
+            loadNamespaceData(ns).then(stats => ({
+                namespace: ns,
+                stats: stats
+            })).catch(() => ({
+                namespace: ns,
+                stats: { running: 0, failed: 0, pending: 0 }
+            }))
+        );
+        
+        Promise.all(promises).then(results => {
+            const cardsHtml = results.map(result => 
+                updateNamespaceCard(result.namespace, result.stats)
+            ).join('');
+            
+            grid.html(cardsHtml);
+            
+            // Initialize search functionality
+            $('#namespace-search').on('input', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                const cards = grid.children('div');
+                let hasVisibleCards = false;
+
+                cards.each(function() {
+                    const namespaceName = $(this).find('h3').text().toLowerCase();
+                    const isMatch = namespaceName.includes(searchTerm);
+                    $(this).toggleClass('hidden', !isMatch);
+                    if (isMatch) hasVisibleCards = true;
+                });
+
+                // Show no results message if no matches found
+                const noResultsMsg = grid.find('.no-results-message');
+                if (!hasVisibleCards) {
+                    if (noResultsMsg.length === 0) {
+                        grid.append(`
+                            <div class="no-results-message col-span-full flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-search text-2xl mb-2"></i>
+                                <p>No namespaces found matching "${searchTerm}"</p>
+                            </div>
+                        `);
+                    }
+                } else {
+                    noResultsMsg.remove();
+                }
+            });
+        }).catch(() => {
+            grid.html(`
+                <div class="col-span-full flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                    <p>Error loading namespace information. Please try again later.</p>
+                </div>
+            `);
+        });
+    }).fail(function() {
+        $('#namespaceGrid').html(`
+            <div class="col-span-full flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                <p>Error loading namespaces. Please try again later.</p>
+            </div>
+        `);
+    });
+});
+</script>
+{% endblock %}
