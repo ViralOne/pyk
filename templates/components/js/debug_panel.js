@@ -2,7 +2,7 @@ function closeDebugPanel() {
     $('#debugPanel').addClass('hidden');
 }
 
-function showDebugPanel(resourceType, resourceName) {
+function showDebugPanel(resourceType, resourceName, namespace) {
     const debugPanel = $('#debugPanel');
     const resourceDetails = $('#debugResourceDetails');
     const relatedResources = $('#debugRelatedResources');
@@ -138,7 +138,7 @@ function generateRelatedResourcesHtml(data) {
             resources.forEach(resource => {
                 html += `
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
-                         onclick="showDebugPanel('${type.toLowerCase().slice(0, -1)}', '${resource.name}')">
+                         onclick="showDebugPanel('${type.toLowerCase().slice(0, -1)}', '${resource.name}', '${namespace}')">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span class="text-sm font-medium text-gray-900 dark:text-white">${resource.name}</span>
@@ -177,7 +177,7 @@ function addDebugHandlers() {
         e.stopPropagation();
         const resourceType = $(this).data('resource-type');
         const resourceName = $(this).data('resource-name');
-        showDebugPanel(resourceType, resourceName);
+        showDebugPanel(resourceType, resourceName, namespace);
     });
 }
 
@@ -405,7 +405,6 @@ function initializeServiceGraph(data) {
             tooltipDelay: 200,
             zoomView: true,
             dragView: true,
-            tooltipDelay: 100,
             hideEdgesOnDrag: true
         },
         groups: Object.fromEntries(
@@ -441,7 +440,7 @@ function initializeServiceGraph(data) {
                 for (const [type, resources] of Object.entries(resourceTypes)) {
                     const resource = resources?.find(r => r.name === nodeId);
                     if (resource) {
-                        window.showDebugPanel(type, resource.name);
+                        window.showDebugPanel(type, resource.name, namespace);
                         break;
                     }
                 }

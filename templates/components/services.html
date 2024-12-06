@@ -8,6 +8,14 @@
             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
             <p>Loading services...</p>
         </div>
+        <div class="error hidden flex flex-col items-center justify-center p-8 text-red-500 dark:text-red-400">
+                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                <p>Failed to load services. Please try again.</p>
+                <button class="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" onclick="retryLoadServices()">
+                    Retry
+                </button>
+            </div>
+            
         <table class="w-full hidden">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
